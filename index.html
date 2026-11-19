@@ -11,7 +11,7 @@ function createClient(base,key){
  onAuthStateChange(cb){listeners.add(cb);return{data:{subscription:{unsubscribe:()=>listeners.delete(cb)}}}},
  getSession,
  async signInWithPassword({email,password}){try{const j=await request('/token?grant_type=password','POST',{email,password});save(j);notify('SIGNED_IN');return{data:{session:j},error:null}}catch(error){return{data:{session:null},error}}},
- async resetPasswordForEmail(email,{redirectTo}={}){try{await request('/recover','POST',{email, ...(redirectTo?{redirect_to:redirectTo}:{})});return{error:null}}catch(error){return{error}}},
+ async resetPasswordForEmail(email,{redirectTo}={}){try{await request('/recover'+(redirectTo?'?redirect_to='+encodeURIComponent(redirectTo):''),'POST',{email});return{error:null}}catch(error){return{error}}},
  async updateUser({password}){try{const {data}=await getSession();if(!data.session?.access_token)throw Error('Сессия восстановления истекла');const user=await request('/user','PUT',{password},data.session.access_token);return{data:{user},error:null}}catch(error){return{error}}},
  async signOut(){const token=session?.access_token;save(null);notify('SIGNED_OUT');if(token)request('/logout','POST',{},token).catch(()=>{});return{error:null}}
  };
