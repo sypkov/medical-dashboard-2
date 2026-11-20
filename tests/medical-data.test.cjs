@@ -202,3 +202,19 @@ test('abnormal-only filter hides normal results and reports without abnormalitie
   assert.equal(normal.classList.hidden,false);
   assert.equal(second.classList.hidden,false);
 });
+
+test('laboratory report search combines Russian dates with analyte names', () => {
+  const row={dataset:{name:'гемоглобин hgb',abnormal:'false'},classList:{hidden:false,toggle(name,on){if(name==='hidden')this.hidden=on}}};
+  const reportTerms=['клиническая лаборатория',...sandbox.labSearchDateTerms('2026-11-20')].join(' ').toLowerCase();
+  const card={dataset:{reportSearch:reportTerms},classList:{hidden:false,toggle(name,on){if(name==='hidden')this.hidden=on}},
+    querySelectorAll(){return [row]},querySelector(){return null}};
+  const controls={labsFilter:{value:'20.11.2026 гемоглобин'},onlyAbnormal:{checked:false},labsList:{children:[card]}};
+  sandbox.e=id=>controls[id];
+  sandbox.filterLabReports();
+  assert.equal(row.classList.hidden,false);
+  assert.equal(card.classList.hidden,false);
+  controls.labsFilter.value='21.11.2026 гемоглобин';
+  sandbox.filterLabReports();
+  assert.equal(row.classList.hidden,true);
+  assert.equal(card.classList.hidden,true);
+});
