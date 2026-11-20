@@ -127,6 +127,8 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
         {measured_at:'2026-01-01T08:00:00Z',metric:'pulse',value:70,unit:'уд/мин'},
         {measured_at:'2026-01-10T08:00:00Z',metric:'pulse',value:72,unit:'уд/мин'}
       ];
+    } else if (url.pathname.endsWith('/md_sync_runs')) {
+      body = [{status:'success',finished_at:'2026-01-10T08:00:00Z',started_at:'2026-01-10T07:59:00Z'}];
     } else if (url.pathname.endsWith('/md_content_blocks') &&
                url.searchParams.get('kind') === 'eq.source_archive') {
       body = [{title:'Синтетическая архивная запись',body:'Контрольный текст архива'}];
@@ -149,6 +151,8 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await expect(row.locator('.protocol-source p')).toContainText('Google Sheets GZT');
   await page.getByRole('link',{name:'Состав тела и давление',exact:true}).click();
   await expect(page.locator('#bloodPressureChart svg')).toBeVisible();
+  await expect(page.locator('#diarySyncStatus')).toContainText('10.01.2026');
+  await expect(page.locator('#diarySyncStatus')).toContainText('успешно');
   await expect(page.locator('#pulseChartNew svg')).toBeVisible();
   await page.getByRole('button',{name:'30 дней',exact:true}).click();
   await expect(page.locator('#bloodPressureChart')).toContainText('118');
@@ -157,7 +161,7 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await expect(page.locator('#archiveContent')).toContainText('Синтетическая архивная запись');
   await page.locator('#accountLogout').click();
   await expect(page.locator('#overview')).toBeHidden();
-  for (const id of ['protocolOverview','bloodPressureChart','pulseChartNew','archiveContent']) {
+  for (const id of ['protocolOverview','bloodPressureChart','pulseChartNew','archiveContent','diarySyncStatus']) {
     await expect(page.locator('#'+id)).toBeEmpty();
   }
 });
