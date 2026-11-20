@@ -35,6 +35,53 @@ const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', '
 const sandbox = vm.createContext({});
 vm.runInContext(names.map(extractFunction).join('\n'), sandbox);
 
+test('profile lookup failure is visible, retryable and makes no medical requests', async () => {
+  const controls = new Map();
+  const calls = [];
+  const state = vm.createContext({
+    privateViewEpoch:0, labsRequestSerial:0, signed:true, client:{}, PATIENT:null,
+    e(id){ if(!controls.has(id))controls.set(id,{textContent:'',disabled:false,replaceChildren(){}});return controls.get(id); },
+    resolvePatient:async()=>{throw Error('Profile unavailable')},
+    renderOverview(){},renderHematologyCharts(){},refresh(){},
+    loadSupplemental(){calls.push('supplemental');return Promise.resolve()},
+    labReadPages(){calls.push('labs');return Promise.resolve([])}
+  });
+  vm.runInContext('async '+extractFunction('loadLabs'),state);
+  await state.loadLabs();
+  assert.match(controls.get('labsStatus').textContent,/Profile unavailable/);
+  assert.equal(controls.get('loadLabs').disabled,false);
+  assert.deepEqual(calls,[]);
+  state.resolvePatient=async()=>{state.PATIENT='22222222-2222-4222-8222-222222222222'};
+  await state.loadLabs();
+  assert.deepEqual(calls,['labs','supplemental']);
+});
+
+test('logout during profile lookup prevents all medical loading', async () => {
+  let complete;
+  const calls=[];
+  const state=vm.createContext({
+    privateViewEpoch:0,labsRequestSerial:0,signed:true,client:{},PATIENT:null,
+    e(){return {disabled:false,textContent:''}},
+    resolvePatient:()=>new Promise(resolve=>{complete=resolve}),
+    refresh(){calls.push('refresh')},labReadPages(){calls.push('labs')}
+  });
+  vm.runInContext('async '+extractFunction('loadLabs'),state);
+  const pending=state.loadLabs();
+  state.signed=false;state.privateViewEpoch++;
+  complete();await pending;
+  assert.deepEqual(calls,[]);
+});
+
+test('import stays disabled until a profile is resolved', () => {
+  const controls=new Map();
+  const state=vm.createContext({signed:true,busy:false,client:{},PATIENT:null,payload:{},importId:null,
+    e(id){if(!controls.has(id))controls.set(id,{disabled:false,checked:true,classList:{toggle(){}}});return controls.get(id)}});
+  vm.runInContext(extractFunction('refresh'),state);
+  state.refresh();assert.equal(controls.get('stage').disabled,true);
+  state.PATIENT='22222222-2222-4222-8222-222222222222';
+  state.refresh();assert.equal(controls.get('stage').disabled,false);
+});
+
 test('calendar dates reject rollover, invalid format and missing values', () => {
   for (const date of ['2024-02-29', '2026-11-20', '2000-02-29'])
     assert.equal(sandbox.validLabDate(date), true, date);
@@ -237,3 +284,4 @@ test('laboratory search uses both sample date and report date', () => {
   sandbox.filterLabReports();
   assert.equal(row.classList.hidden,true);
 });
+
