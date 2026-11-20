@@ -141,6 +141,8 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
       ];
     } else if (url.pathname.endsWith('/md_sync_runs')) {
       body = [{status:'success',finished_at:'2026-01-10T08:00:00Z',started_at:'2026-01-10T07:59:00Z'}];
+    } else if (url.pathname.endsWith('/md_content_blocks') && url.searchParams.get('kind') === 'eq.consultation_history') {
+      body=[{title:'Гастроэнтеролог — 01.01.2026',body:'Врач Первый. Заключение и назначение А.'},{title:'Гастроэнтеролог — 10.01.2026',body:'Врач Второй. Заключение и назначение Б.'},{title:'Колопроктолог — 03.01.2026',body:'Контрольное заключение.'}];
     } else if (url.pathname.endsWith('/md_content_blocks') && url.searchParams.get('kind') === 'eq.medication_inventory') {
       body=[{body:JSON.stringify({medication:'Омнадрен',mg_per_ampoule:100,ml_per_ampoule:1,receipts:[{date:'2026-01-01',ampoules:2,label:'Начальный запас'},{date:'2026-01-07',ampoules:3,label:'Закупка'}]})}];
     } else if (url.pathname.endsWith('/md_content_blocks') &&
@@ -154,6 +156,18 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await page.locator('#password').fill('synthetic-password');
   await page.locator('#login').click();
   await expect(page.locator('#protocolOverview')).toContainText('Омнадрен');
+  await page.getByRole('link',{name:'Врачи',exact:true}).click();
+  const specialty=page.locator('#visitsOverview > details').filter({has:page.locator('summary').filter({hasText:/^Гастроэнтеролог$/})});
+  await expect(specialty).toHaveCount(1);
+  await specialty.locator('summary').click();
+  await expect(specialty.locator('.consultation-entry')).toHaveCount(2);
+  await expect(specialty.locator('h4')).toHaveText(['Гастроэнтеролог — 10.01.2026','Гастроэнтеролог — 01.01.2026']);
+  await expect(specialty).toContainText('Врач Первый. Заключение и назначение А.');
+  await expect(specialty).toContainText('Врач Второй. Заключение и назначение Б.');
+  await page.locator('#visitsSearch').fill('Врач Второй');
+  await expect(page.locator('#visitsOverview .consultation-entry')).toHaveCount(1);
+  await page.locator('#visitsSearch').fill('');
+  await expect(page.locator('#visitsOverview > details')).toHaveCount(2);
   await page.getByRole('link',{name:'Протокол',exact:true}).click();
   await expect(page.locator('.protocol-history-table')).toHaveCount(3);
   const omnadren = page.getByRole('table',{name:'Омнадрен — история инъекций'});
