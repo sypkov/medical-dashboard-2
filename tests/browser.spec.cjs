@@ -199,6 +199,7 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await expect(row).not.toContainText('Google Sheets');
   await page.getByRole('link',{name:'Состав тела и давление',exact:true}).click();
   await expect(page.locator('#bloodPressureChart svg')).toBeVisible();
+  await expect(page.locator('#bloodPressureChart .chart-axis')).toHaveCount(6);
   await expect(page.locator('#diarySyncStatus')).toContainText('10.01.2026');
   await expect(page.locator('#diarySyncStatus')).toContainText('успешно');
   await expect(page.locator('#pulseChartNew svg')).toBeVisible();
