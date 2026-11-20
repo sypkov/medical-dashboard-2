@@ -191,8 +191,16 @@ for(const x of results){const date=dated.get(x.report_id);if(!date)continue;cons
 const items=[...byName.values()].map(points=>{points.sort((a,b)=>a.date.localeCompare(b.date));return{latest:points[points.length-1],points}}).sort((a,b)=>a.latest.name.localeCompare(b.latest.name,'ru'));
 for(const g of groups){const target=e(g.id);target.replaceChildren();const subset=items.filter(item=>{const name=item.latest.name.toLowerCase();return g.id==='chemistryOverview'?!groups.slice(0,3).some(group=>group.match(name)):g.match(name)});
 if(!subset.length){text(target,'p','Пока нет доступных результатов.');continue}
-for(const item of subset){const x=item.latest;const row=text(target,'div','','data-row');text(row,'span',x.name,'card-label');
-const lo=x.ref_low,hi=x.ref_high,n=Number(x.numeric_value);const hasNumeric=x.numeric_value!==null&&Number.isFinite(n);const low=lo!==null&&lo!==undefined,high=hi!==null&&hi!==undefined;const abnormal=hasNumeric&&((low&&n<Number(lo))||(high&&n>Number(hi)));
+const chemistryCategories=[
+{title:'Биохимия крови',match:n=>/креатинин|скф|мочевин|мочев|билирубин|алт|аст|ггт|щелочн|альбумин|общий белок|глюкоз|мочев|кальций|магний|натрий|калий|хлорид|фосфор|амилаз|липаз/.test(n)},
+{title:'Липидный профиль',match:n=>/холестерин|триглицерид|лпнп|лпвп|лпонп|аполипопротеин|липопротеин/.test(n)},
+{title:'Коагулограмма',match:n=>/ачтв|мно|протромбин|тромбиновое время|фибриноген|д димер|d димер/.test(n)},
+{title:'Инфекции и серология',match:n=>/вич|hbsag|гепатит|сифилис|антитела|серолог/.test(n)},
+{title:'Общий анализ мочи',match:n=>/моча|мочи|уробилиноген|удельный вес|нитрит|лейкоцитарная эстераза/.test(n)}];
+const ordered=g.id==='chemistryOverview'?[...subset].sort((a,b)=>{const rank=item=>{const n=item.latest.name.toLowerCase();const i=chemistryCategories.findIndex(group=>group.match(n));return i<0?chemistryCategories.length:i};return rank(a)-rank(b)||a.latest.name.localeCompare(b.latest.name,'ru')}):subset;
+let previousCategory='';
+for(const item of ordered){const x=item.latest;if(g.id==='chemistryOverview'){const name=x.name.toLowerCase();const category=chemistryCategories.find(group=>group.match(name))?.title||'Другие исследования';if(category!==previousCategory){text(target,'h3',category,'reference-subheading');previousCategory=category}}const row=text(target,'div','','data-row');text(row,'span',x.name,'card-label');
+const lo=x.ref_low,hi=x.ref_high,n=Number(x.numeric_value);const validNumber=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v));const hasNumeric=validNumber(x.numeric_value);const low=validNumber(lo),high=validNumber(hi);const abnormal=hasNumeric&&((low&&n<Number(lo))||(high&&n>Number(hi)));
 const value=text(row,'strong',String(x.numeric_value??x.text_value??'—').replace('.',',')+' '+(x.unit||''));if(abnormal){row.classList.add('abnormal');value.style.color='#993c1d';text(row,'span',low&&n<Number(lo)?'↓ Ниже референса':'↑ Выше референса','flag flag-high')}
 text(row,'span',low||high?'Референс: '+(low?lo:'…')+'–'+(high?hi:'…')+' '+(x.unit||''):'Референс не указан','ref');
 const points=item.points.filter(p=>p.numeric_value!==null&&Number.isFinite(Number(p.numeric_value)));
