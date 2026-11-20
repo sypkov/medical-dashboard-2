@@ -31,7 +31,7 @@ function extractFunction(name) {
   throw new Error('Unclosed function ' + name);
 }
 
-const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', 'normalizedMedicalPoint'];
+const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', 'normalizedMedicalPoint', 'filterLabReports'];
 const sandbox = vm.createContext({});
 vm.runInContext(names.map(extractFunction).join('\n'), sandbox);
 
@@ -71,4 +71,67 @@ test('specific charts preserve missing reference bounds', () => {
 test('blood count unit variants normalize to one display unit', () => {
   assert.equal(sandbox.canonicalBloodCountUnit('Тромбоциты', '10^9/л'), '×10⁹/л');
   assert.equal(sandbox.canonicalBloodCountUnit('Эритроциты', '×10¹²/л'), '×10¹²/л');
+});
+
+test('lab filters reveal matching rows and restore manual expansion state', () => {
+  function classes() {
+    const values = new Set();
+    return {toggle(name, enabled) { if (enabled) values.add(name); else values.delete(name); }, contains(name) { return values.has(name); }};
+  }
+  const rows = [
+    {dataset:{name:'гематокрит hct', abnormal:'true'}, classList:classes()},
+    {dataset:{name:'гемоглобин hgb', abnormal:'false'}, classList:classes()}
+  ];
+  const details = {open:false, dataset:{}};
+  const summary = {textContent:''};
+  const card = {
+    dataset:{reportSearch:'лаборатория север 2026-11-20'},
+    classList:classes(),
+    querySelectorAll(selector) { assert.equal(selector, '.lab-results .row'); return rows; },
+    querySelector(selector) { return selector==='details'?details:selector==='summary'?summary:null; }
+  };
+  const controls = {
+    labsFilter:{value:''},
+    onlyAbnormal:{checked:false},
+    labsList:{children:[card]}
+  };
+  sandbox.e = id => controls[id];
+  controls.labsFilter.value='  ГЕМАТОКРИТ    СЕВЕР  ';
+  sandbox.filterLabReports();
+  assert.equal(rows[0].classList.contains('hidden'), false);
+  assert.equal(rows[1].classList.contains('hidden'), true);
+  assert.equal(details.open, true);
+  assert.equal(summary.textContent, 'Показатели (1)');
+  assert.equal(card.classList.contains('hidden'), false);
+  controls.labsFilter.value='';
+  controls.onlyAbnormal.checked=true;
+  sandbox.filterLabReports();
+  assert.equal(details.open, true);
+  assert.equal(rows[1].classList.contains('hidden'), true);
+  controls.onlyAbnormal.checked=false;
+  sandbox.filterLabReports();
+  assert.equal(details.open, false, 'manual closed state must be restored');
+  assert.equal(details.dataset.preFilterOpen, undefined);
+  assert.equal(rows[1].classList.contains('hidden'), false);
+  assert.equal(summary.textContent, 'Показатели (2)');
+});
+
+test('lab filter retains empty reports only when their metadata matches', () => {
+  const hidden = new Set();
+  const card = {
+    dataset:{reportSearch:'архивная лаборатория 2025-03-04'},
+    classList:{toggle(name, on){if(on)hidden.add(name);else hidden.delete(name)}},
+    querySelectorAll(){return []},
+    querySelector(){return null}
+  };
+  const controls = {labsFilter:{value:'архивная'},onlyAbnormal:{checked:false},labsList:{children:[card]}};
+  sandbox.e = id => controls[id];
+  sandbox.filterLabReports();
+  assert.equal(hidden.has('hidden'), false);
+  controls.labsFilter.value='неизвестная';
+  sandbox.filterLabReports();
+  assert.equal(hidden.has('hidden'), true);
+  controls.labsFilter.value='';
+  sandbox.filterLabReports();
+  assert.equal(hidden.has('hidden'), false);
 });
