@@ -160,7 +160,7 @@ button:hover{filter:brightness(.96)}
 .chart-lab-legend{display:flex;gap:5px 14px;margin:8px 0}.chart-point-detail{font-size:13px;line-height:1.6;color:var(--green);margin-top:8px}
 .chart-axis{fill:var(--muted);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:18px}
 .body-toolbar{gap:8px;margin-bottom:18px}.body-toolbar button{border:1px solid var(--border);color:var(--muted);background:var(--paper);font-size:14px;padding:9px 17px;border-radius:999px}.body-toolbar button.active{background:#e0e7de;border-color:#ccd9cd;color:#275e4b}
-.body-delta{font-size:14px;color:var(--muted)}.body-vitals{gap:18px}.body-big-chart{height:210px}.body-vitals-card h3{font-size:25px}.vitals-legend span{font-size:14px}
+.body-delta{font-size:14px;color:var(--muted)}.body-vitals{gap:18px}.body-big-chart{height:auto;aspect-ratio:640/235;min-height:160px}.body-vitals-card h3{font-size:25px}.vitals-legend span{font-size:14px}
 .protocol-history-title{color:var(--muted);font-size:14px;font-weight:400}
 .protocol-medication{margin-bottom:30px}.protocol-medication h3{font-size:26px;color:var(--ink)}
 .protocol-table-wrap{background:var(--paper);border:1px solid var(--border);border-radius:20px}
@@ -190,7 +190,7 @@ button:hover{filter:brightness(.96)}
  #overview .reference-warning,#overview .reference-note{padding:19px 20px;font-size:14px}
  .reference-section-charts{grid-template-columns:1fr;gap:15px}.hematology-chart-card{padding:21px 18px}.hematology-chart-card strong{font-size:38px}.hematology-line-chart{height:auto;min-height:170px}.chart-axis{font-size:26px}
  .card{padding:21px 18px;border-radius:23px}.protocol-history-table td{padding:0}.protocol-history-table tr{padding:15px}.protocol-note{padding:18px 20px}.protocol-note summary{font-size:22px}
- .body-vitals{grid-template-columns:1fr}.body-big-chart{height:210px}
+ .body-vitals{grid-template-columns:1fr}.body-big-chart{height:auto;aspect-ratio:640/235;min-height:160px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style></head><body><header class="header"><div><h1>Лабораторный журнал</h1><p>Персональная история здоровья</p></div></header><main><section class="card hidden" id="accountBar"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong>Мой медицинский дашборд</strong><small id="accountName" style="display:block">Аккаунт авторизован</small></div><button id="accountLogout" type="button">Выйти</button></div></section><section class="card" id="loginCard"><h2>Вход в журнал</h2><p id="auth">Не авторизован</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Пароль<input id="password" type="password" autocomplete="current-password"></label><button id="login">Войти</button><button id="logout" disabled>Выйти</button></section><section class="card" id="recoveryCard"><h2>Восстановление доступа</h2><p>Запроси письмо для смены пароля. Если Supabase сообщает о лимите писем, дождись его сброса.</p><label>Email для восстановления<input id="recoveryEmail" type="email" autocomplete="email"></label><button id="requestRecovery">Отправить письмо</button><div id="newPasswordPanel" class="hidden"><p>Ссылка восстановления подтверждена. Установи новый пароль.</p><label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="12"></label><label>Повтори пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="12"></label><button id="savePassword">Сохранить новый пароль</button></div></section><section class="hidden" id="overview">
@@ -471,7 +471,55 @@ target.classList.toggle('hidden',g.id==='hormonesOverview'&&displayedRows===0);
 e('overviewStatus').textContent='Последние лабораторные результаты · '+reports.length+' отчётов · '+results.length+' показателей';
 }
 let bodyHistory=[];let bodyPeriod='all';
-function drawMedicalLine(host,series,units){host.replaceChildren();const all=series.flatMap(s=>s.points.filter(p=>p.value!==null&&p.value!==undefined&&p.value!==''&&p.measured_at&&Number.isFinite(new Date(p.measured_at).getTime())).map(p=>({date:p.measured_at,value:Number(p.value)}))).filter(p=>Number.isFinite(p.value)).sort((a,b)=>a.date.localeCompare(b.date));if(!all.length){text(host,'p','Измерений пока нет в защищённой базе.');return}const latest=all[all.length-1].date;const cutoff=bodyPeriod==='all'?null:new Date(new Date(latest).getTime()-Number(bodyPeriod)*86400000);const selected=series.map(s=>({...s,points:s.points.filter(p=>p.value!==null&&p.value!==undefined&&p.value!==''&&p.measured_at&&Number.isFinite(Number(p.value))&&Number.isFinite(new Date(p.measured_at).getTime())&&(!cutoff||new Date(p.measured_at)>=cutoff)).sort((a,b)=>a.measured_at.localeCompare(b.measured_at))})).filter(s=>s.points.length);if(!selected.length){text(host,'p','Нет измерений за выбранный период.');return}const pts=selected.flatMap(s=>s.points),times=pts.map(p=>new Date(p.measured_at).getTime()),vals=pts.map(p=>Number(p.value));const xmin=Math.min(...times),xmax=Math.max(...times),ymin=Math.min(...vals),ymax=Math.max(...vals),yspan=ymax-ymin||1,xspan=xmax-xmin||1;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 640 180');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label',selected.map(s=>s.name).join(', '));svg.classList.add('body-big-chart');for(let i=0;i<4;i++){const y=15+i*46;const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1','35');line.setAttribute('x2','628');line.setAttribute('y1',String(y));line.setAttribute('y2',String(y));line.setAttribute('stroke','#e7e5df');svg.append(line)}for(const s of selected){const poly=document.createElementNS('http://www.w3.org/2000/svg','polyline');poly.setAttribute('points',s.points.map(p=>(35+593*(new Date(p.measured_at).getTime()-xmin)/xspan)+','+(153-135*(Number(p.value)-ymin)/yspan)).join(' '));poly.setAttribute('fill','none');poly.setAttribute('stroke',s.color);poly.setAttribute('stroke-width','2.7');poly.setAttribute('stroke-linecap','round');poly.setAttribute('stroke-linejoin','round');svg.append(poly)}host.append(svg);const legend=text(host,'div','','vitals-legend');for(const s of selected){const last=s.points[s.points.length-1];const label=text(legend,'span',s.name+': '+String(last.value).replace('.',',')+' '+units);label.style.borderLeft='3px solid '+s.color}text(host,'small',displayMedicalDate(new Date(xmin).toISOString())+' — '+displayMedicalDate(new Date(xmax).toISOString()))}
+function drawMedicalLine(host,series,units){
+  host.replaceChildren();
+  const valid=point=>point.value!==null&&point.value!==undefined&&String(point.value).trim()!==''&&Number.isFinite(Number(point.value))&&point.measured_at&&Number.isFinite(Date.parse(point.measured_at));
+  const all=series.flatMap(item=>item.points.filter(valid));
+  if(!all.length){text(host,'p','Измерений пока нет в защищённой базе.');return}
+  const lastTime=Math.max(...all.map(point=>Date.parse(point.measured_at)));
+  const cutoff=bodyPeriod==='all'?-Infinity:lastTime-Number(bodyPeriod)*86400000;
+  const selected=series.map(item=>({...item,points:item.points.filter(point=>valid(point)&&Date.parse(point.measured_at)>=cutoff).sort((a,b)=>Date.parse(a.measured_at)-Date.parse(b.measured_at))})).filter(item=>item.points.length);
+  if(!selected.length){text(host,'p','Нет измерений за выбранный период.');return}
+  const points=selected.flatMap(item=>item.points);
+  const times=points.map(point=>Date.parse(point.measured_at)),values=points.map(point=>Number(point.value));
+  const xmin=Math.min(...times),xmax=Math.max(...times),min=Math.min(...values),max=Math.max(...values);
+  const padding=(max-min||Math.max(Math.abs(max)*.05,1))*.1;
+  const ymin=min-padding,ymax=max+padding;
+  const left=78,right=620,top=18,bottom=185;
+  const xOf=point=>xmin===xmax?(left+right)/2:left+(right-left)*(Date.parse(point.measured_at)-xmin)/(xmax-xmin);
+  const yOf=value=>bottom-(bottom-top)*(value-ymin)/(ymax-ymin);
+  const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('viewBox','0 0 640 235');svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  svg.setAttribute('role','img');svg.setAttribute('aria-label',selected.map(item=>item.name).join(', '));svg.classList.add('body-big-chart');
+  for(let tick=0;tick<4;tick++){
+    const value=ymin+(ymax-ymin)*tick/3,y=yOf(value),grid=document.createElementNS(ns,'line');
+    grid.setAttribute('x1',String(left));grid.setAttribute('x2',String(right));grid.setAttribute('y1',String(y));grid.setAttribute('y2',String(y));
+    grid.setAttribute('stroke','#c9c5b8');grid.setAttribute('stroke-dasharray','4 5');svg.append(grid);
+    chartAxisLabel(svg,left-10,y+6,Number(value.toPrecision(3)).toLocaleString('ru-RU'),'end');
+  }
+  for(const item of selected){
+    const line=document.createElementNS(ns,'polyline');
+    line.setAttribute('points',item.points.map(point=>xOf(point)+','+yOf(Number(point.value))).join(' '));
+    line.setAttribute('fill','none');line.setAttribute('stroke',item.color);line.setAttribute('stroke-width','2.7');
+    line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');svg.append(line);
+    for(const point of item.points){
+      const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',String(xOf(point)));dot.setAttribute('cy',String(yOf(Number(point.value))));
+      dot.setAttribute('r','2.8');dot.setAttribute('fill',item.color);
+      const tip=document.createElementNS(ns,'title');tip.textContent=displayMedicalDate(point.measured_at)+' · '+item.name+': '+point.value+' '+units;dot.append(tip);svg.append(dot);
+    }
+  }
+  const ordered=[...new Map(points.map(point=>[point.measured_at,point])).values()].sort((a,b)=>Date.parse(a.measured_at)-Date.parse(b.measured_at));
+  const tickCount=Math.min(5,ordered.length);
+  for(let tick=0;tick<tickCount;tick++){
+    const point=ordered[Math.round(tick*(ordered.length-1)/Math.max(1,tickCount-1))];
+    const date=displayMedicalDate(point.measured_at).slice(0,5);
+    chartAxisLabel(svg,xOf(point),219,date,tick===0?'start':tick===tickCount-1?'end':'middle');
+  }
+  host.append(svg);
+  const legend=text(host,'div','','vitals-legend');
+  for(const item of selected){const latest=item.points[item.points.length-1];const label=text(legend,'span',item.name+': '+String(latest.value).replace('.',',')+' '+units);label.style.borderLeft='3px solid '+item.color}
+  text(host,'small',displayMedicalDate(new Date(xmin).toISOString())+' — '+displayMedicalDate(new Date(xmax).toISOString()));
+}
 function renderBodyHistory(rows){const host=e('bodyOverview');host.replaceChildren();const byMetric=new Map();for(const x of rows){const metric=x.metric||'Измерение';if(!byMetric.has(metric))byMetric.set(metric,[]);byMetric.get(metric).push(x)}const names={weight:'Вес',body_fat:'Доля жира',muscle_mass:'Мышечная масса',hydration:'Гидратация',visceral_fat:'Висцеральный жир',bmi:'ИМТ',protein_pct:'Белок',bone_mass:'Костная масса',basal_metabolic_rate:'Основной обмен',body_age:'Возраст тела',body_score:'Оценка тела',systolic:'Систолическое давление',diastolic:'Диастолическое давление',pulse:'Пульс'};const latestDate=rows.length?Math.max(...rows.map(p=>new Date(p.measured_at).getTime())):null;const cutoff=bodyPeriod==='all'||latestDate===null?null:new Date(latestDate-Number(bodyPeriod)*86400000);
 let visibleCount=0;for(const [metric,points] of byMetric){if(['systolic','diastolic','pulse'].includes(metric))continue;const ordered=points.filter(p=>p.value!==null&&Number.isFinite(Number(p.value))).sort((a,b)=>String(a.measured_at).localeCompare(String(b.measured_at)));if(!ordered.length)continue;const visible=cutoff?ordered.filter(p=>new Date(p.measured_at)>=cutoff):ordered;if(!visible.length)continue;visibleCount++;const latest=visible[visible.length-1];const card=text(host,'div','','data-row');text(card,'span',names[metric]||metric,'card-label');text(card,'strong',String(latest.value).replace('.',',')+' '+(latest.unit||''));if(visible.length>1){const delta=Number(latest.value)-Number(visible[0].value);text(card,'span','Изменение: '+(delta>0?'+':'')+Number(delta.toFixed(2)).toLocaleString('ru-RU')+' '+(latest.unit||''),'body-delta');const values=visible.map(p=>Number(p.value)),min=Math.min(...values),max=Math.max(...values),span=max-min||1;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 160 40');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика '+(names[metric]||metric));svg.classList.add('sparkline');const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');line.setAttribute('points',visible.map((p,i)=>(3+i*154/(visible.length-1))+','+(35-(Number(p.value)-min)/span*30)).join(' '));line.setAttribute('stroke','#397b64');line.setAttribute('stroke-width','2');line.setAttribute('fill','none');svg.append(line);card.append(svg)}text(card,'span',displayMedicalDate(visible[0].measured_at)+' — '+displayMedicalDate(latest.measured_at)+' · '+visible.length+' измерений','date')}if(!visibleCount)text(host,'div','Нет измерений состава тела за выбранный период.','reference-empty');
 drawMedicalLine(e('bloodPressureChart'),[{name:'Систолическое',color:'#397b64',points:byMetric.get('systolic')||[]},{name:'Диастолическое',color:'#9b8465',points:byMetric.get('diastolic')||[]}],'мм рт. ст.');drawMedicalLine(e('pulseChartNew'),[{name:'Пульс',color:'#397b64',points:byMetric.get('pulse')||[]}],'уд/мин')}
