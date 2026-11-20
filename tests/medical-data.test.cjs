@@ -31,7 +31,7 @@ function extractFunction(name) {
   throw new Error('Unclosed function ' + name);
 }
 
-const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', 'normalizedMedicalPoint', 'filterLabReports'];
+const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', 'normalizedMedicalPoint', 'filterLabReports', 'labSearchDateTerms'];
 const sandbox = vm.createContext({});
 vm.runInContext(names.map(extractFunction).join('\n'), sandbox);
 
@@ -134,4 +134,12 @@ test('lab filter retains empty reports only when their metadata matches', () => 
   controls.labsFilter.value='';
   sandbox.filterLabReports();
   assert.equal(hidden.has('hidden'), false);
+});
+
+test('laboratory report date search accepts ISO and Russian calendar notation', () => {
+  const valid = Array.from(sandbox.labSearchDateTerms('2026-11-20'));
+  assert.deepEqual(valid, ['2026-11-20', '20.11.2026']);
+  const leap = Array.from(sandbox.labSearchDateTerms('2024-02-29'));
+  assert.deepEqual(leap, ['2024-02-29', '29.02.2024']);
+  assert.deepEqual(Array.from(sandbox.labSearchDateTerms('2026-02-30')), ['2026-02-30']);
 });
