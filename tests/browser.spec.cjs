@@ -103,3 +103,61 @@ test('Failed authentication never reveals the medical dashboard', async ({ page 
   await expect(page.locator('#overview')).toBeHidden();
   await expect(page.locator('#labsList')).toBeEmpty();
 });
+
+test('Mobile diary, protocol, archive and scrolling work together', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const patient = '22222222-2222-4222-8222-222222222222';
+  await page.route('https://*.supabase.co/**', async route => {
+    const url = new URL(route.request().url());
+    let body = [];
+    if (url.pathname === '/auth/v1/token') {
+      body = { access_token:'synthetic-mobile-token', refresh_token:'synthetic-refresh',
+        expires_at:Math.floor(Date.now()/1000)+3600, user:{id:'synthetic-mobile-user'} };
+    } else if (url.pathname.endsWith('/md_memberships')) {
+      body = [{patient_id:patient,role:'owner'}];
+    } else if (url.pathname.endsWith('/md_therapy_events')) {
+      body = [{event_at:'2026-01-10T08:00:00Z',medication:'Тестовый препарат',
+        dose:1,dose_unit:'мг',note:'Подтверждено в Google Sheets. Время инъекции не указано. · Источник: Google Sheets GZT; точное время не указано.'}];
+    } else if (url.pathname.endsWith('/md_diary_entries')) {
+      body = [
+        {measured_at:'2026-01-01T08:00:00Z',metric:'systolic',value:120,unit:'мм рт. ст.'},
+        {measured_at:'2026-01-10T08:00:00Z',metric:'systolic',value:118,unit:'мм рт. ст.'},
+        {measured_at:'2026-01-01T08:00:00Z',metric:'diastolic',value:80,unit:'мм рт. ст.'},
+        {measured_at:'2026-01-10T08:00:00Z',metric:'diastolic',value:78,unit:'мм рт. ст.'},
+        {measured_at:'2026-01-01T08:00:00Z',metric:'pulse',value:70,unit:'уд/мин'},
+        {measured_at:'2026-01-10T08:00:00Z',metric:'pulse',value:72,unit:'уд/мин'}
+      ];
+    } else if (url.pathname.endsWith('/md_content_blocks') &&
+               url.searchParams.get('kind') === 'eq.source_archive') {
+      body = [{title:'Синтетическая архивная запись',body:'Контрольный текст архива'}];
+    }
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('http://127.0.0.1:8765/');
+  await page.locator('#email').fill('mobile@example.invalid');
+  await page.locator('#password').fill('synthetic-password');
+  await page.locator('#login').click();
+  await expect(page.locator('#protocolOverview')).toContainText('Тестовый препарат');
+  await page.getByRole('link',{name:'Протокол',exact:true}).click();
+  const row = page.locator('.protocol-history-table tbody tr').first();
+  await expect(row).toHaveCSS('display','grid');
+  await expect(row.locator('td').first()).toHaveText('10.01.2026');
+  await expect(row.locator('td').nth(3).locator('span')).toHaveText('Выполнено');
+  await expect(page.locator('.reference-sticky')).toHaveCSS('position','static');
+  await expect(page.locator('.reference-sticky')).not.toBeInViewport();
+  await row.locator('.protocol-source summary').click();
+  await expect(row.locator('.protocol-source p')).toContainText('Google Sheets GZT');
+  await page.getByRole('link',{name:'Состав тела и давление',exact:true}).click();
+  await expect(page.locator('#bloodPressureChart svg')).toBeVisible();
+  await expect(page.locator('#pulseChartNew svg')).toBeVisible();
+  await page.getByRole('button',{name:'30 дней',exact:true}).click();
+  await expect(page.locator('#bloodPressureChart')).toContainText('118');
+  await page.getByRole('link',{name:'Все анализы',exact:true}).click();
+  await page.locator('#sourceArchive > summary').click();
+  await expect(page.locator('#archiveContent')).toContainText('Синтетическая архивная запись');
+  await page.locator('#accountLogout').click();
+  await expect(page.locator('#overview')).toBeHidden();
+  for (const id of ['protocolOverview','bloodPressureChart','pulseChartNew','archiveContent']) {
+    await expect(page.locator('#'+id)).toBeEmpty();
+  }
+});
