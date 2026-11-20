@@ -404,10 +404,14 @@ function renderHematologyCharts(reports,results,section='hematology'){
       svg.append(dot);
     }
     const tickDates=[...dateGroups.keys()];
-    const indexes=new Set(Array.from({length:Math.min(5,tickDates.length)},(_,index)=>Math.round(index*(tickDates.length-1)/Math.max(1,Math.min(5,tickDates.length)-1))));
-    for(const index of indexes){
-      const date=tickDates[index];
-      chartAxisLabel(svg,xOfDate(date),252,date.slice(8,10)+'.'+date.slice(5,7),index===0?'start':index===tickDates.length-1?'end':'middle');
+    const axisDates=[tickDates[0]];
+    for(const date of tickDates.slice(1,-1)){
+      if(xOfDate(date)-xOfDate(axisDates[axisDates.length-1])>=110&&right-xOfDate(date)>=110)axisDates.push(date);
+    }
+    if(tickDates.length>1)axisDates.push(tickDates[tickDates.length-1]);
+    for(let index=0;index<axisDates.length;index++){
+      const date=axisDates[index];
+      chartAxisLabel(svg,xOfDate(date),252,date.slice(8,10)+'.'+date.slice(5,7),index===0?'start':index===axisDates.length-1?'end':'middle');
     }
     card.insertBefore(svg,detail);
     text(card,'small',displayMedicalDate(plotted[0].date)+' — '+displayMedicalDate(latest.date)+' · '+plotted.length+' измерений');
@@ -509,11 +513,14 @@ function drawMedicalLine(host,series,units){
     }
   }
   const ordered=[...new Map(points.map(point=>[point.measured_at,point])).values()].sort((a,b)=>Date.parse(a.measured_at)-Date.parse(b.measured_at));
-  const tickCount=Math.min(5,ordered.length);
-  for(let tick=0;tick<tickCount;tick++){
-    const point=ordered[Math.round(tick*(ordered.length-1)/Math.max(1,tickCount-1))];
-    const date=displayMedicalDate(point.measured_at).slice(0,5);
-    chartAxisLabel(svg,xOf(point),219,date,tick===0?'start':tick===tickCount-1?'end':'middle');
+  const axisPoints=[ordered[0]];
+  for(const point of ordered.slice(1,-1)){
+    if(xOf(point)-xOf(axisPoints[axisPoints.length-1])>=110&&right-xOf(point)>=110)axisPoints.push(point);
+  }
+  if(ordered.length>1)axisPoints.push(ordered[ordered.length-1]);
+  for(let index=0;index<axisPoints.length;index++){
+    const point=axisPoints[index],date=displayMedicalDate(point.measured_at).slice(0,5);
+    chartAxisLabel(svg,xOf(point),219,date,index===0?'start':index===axisPoints.length-1?'end':'middle');
   }
   host.append(svg);
   const legend=text(host,'div','','vitals-legend');
