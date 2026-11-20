@@ -138,10 +138,11 @@ window.addEventListener('hashchange',()=>{const id=decodeURIComponent(location.h
 if(location.hash){const initialId=decodeURIComponent(location.hash.slice(1));if(e(initialId)?.classList.contains('section-title')){const title=e(initialId);if(title.classList.contains('collapsed'))setDashboardSectionCollapsed(title,false);for(const link of document.querySelectorAll('#overview .reference-nav a[href^="#"]'))link.classList.toggle('active',link.getAttribute('href')==='#'+initialId)}}
 function canonicalBloodCountUnit(name,unit){const n=String(name||'').trim().toLowerCase(),u=String(unit||'').trim().replace(/\s+/g,'').replace(/х/g,'x').replace(/×/g,'x');if(n==='тромбоциты'&&/^(?:x)?10(?:\^9|⁹)\/л$/i.test(u))return '×10⁹/л';if(n==='эритроциты'&&/^(?:x)?10(?:\^12|¹²)\/л$/i.test(u))return '×10¹²/л';return unit}
 function trendMedicalValue(r){const name=String(r.analyte_name||r.analyte_code||'').toLowerCase();const raw=r.numeric_value;let value=raw===null||raw===undefined||String(raw).trim()===''?NaN:Number(raw),unit=String(r.unit||'').trim();if(name==='гемоглобин'&&/^(г\/дл|g\/dl)$/i.test(unit)){value*=10;unit='г/л'}else if(name==='гемоглобин'&&/^(г\/л|g\/l)$/i.test(unit))unit='г/л';unit=canonicalBloodCountUnit(name,unit);return{value,unit}}
+function canonicalAnalyteName(name){const raw=String(name||'').trim();const normalized=raw.toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ');const aliases={'алат':'АЛТ','алт':'АЛТ','асат':'АСТ','аст':'АСТ','ггт':'Гамма-ГТ','гамма-гт':'Гамма-ГТ'};return aliases[normalized]||raw}
 function renderTrends(reports,results){
 const host=e('labTrends');host.replaceChildren();const dated=new Map(reports.map(r=>[r.id,r.sample_date||r.report_date]));const labs=new Map(reports.map(r=>[r.id,r.lab_name||'Лаборатория не указана']));const series=new Map();
 function normalize(s){return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z0-9%]+/g,' ').trim()}
-for(const r of results){if(r.numeric_value==null||!validLabDate(dated.get(r.report_id)))continue;const name=normalize(r.analyte_name||r.analyte_code);const converted=trendMedicalValue(r);if(!Number.isFinite(converted.value))continue;const key=name+'|'+normalize(converted.unit);if(!series.has(key))series.set(key,[]);series.get(key).push({date:dated.get(r.report_id),value:converted.value,name:r.analyte_name||r.analyte_code,unit:converted.unit,lab:labs.get(r.report_id)})}
+for(const r of results){if(r.numeric_value==null||!validLabDate(dated.get(r.report_id)))continue;const name=normalize(canonicalAnalyteName(r.analyte_name||r.analyte_code));const converted=trendMedicalValue(r);if(!Number.isFinite(converted.value))continue;const key=name+'|'+normalize(converted.unit);if(!series.has(key))series.set(key,[]);series.get(key).push({date:dated.get(r.report_id),value:converted.value,name:canonicalAnalyteName(r.analyte_name||r.analyte_code),unit:converted.unit,lab:labs.get(r.report_id)})}
 let count=0;for(const points of series.values()){points.sort((a,b)=>a.date.localeCompare(b.date));if(points.length<2)continue;count++;const panel=text(host,'div','','lab-report');text(panel,'strong',points[0].name+' · '+points[0].unit);
 const values=points.map(p=>p.value),min=Math.min(...values),max=Math.max(...values),span=max-min||1;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 600 150');svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика '+points[0].name);svg.style.cssText='width:100%;height:150px;display:block;margin:12px 0';panel.append(svg);
 for(const y of [25,65,105]){const grid=document.createElementNS('http://www.w3.org/2000/svg','line');grid.setAttribute('x1','35');grid.setAttribute('x2','590');grid.setAttribute('y1',String(y));grid.setAttribute('y2',String(y));grid.setAttribute('stroke','#e5e2db');svg.append(grid)}
@@ -182,17 +183,17 @@ function listInto(id,items,empty){const target=e(id);target.replaceChildren();if
 listInto('overviewAttention',attention,'Среди четырёх ключевых показателей нет значений вне указанных референсов.');
 listInto('overviewNormal',normal,'Нет ключевых показателей с указанным референсом внутри интервала.');
 const groups=[
-{id:'markersOverview',match:n=>/пса|онкомаркер|с реактивн|срб|гомоцистеин|ферритин|витамин|железо|трансферрин|фолиев/.test(n)},
+{id:'markersOverview',match:n=>/пса|онкомаркер|с реактивн|срб|гомоцистеин|витамин|железо|трансферрин|фолиев/.test(n)},
 {id:'hormonesOverview',match:n=>/тестостерон|эстрадиол|пролактин|лг|фсг|гспг|дгэа|кортизол|тиреотроп|т4|т3/.test(n)},
 {id:'hematologyOverview',match:n=>/гематокрит|гемоглобин|эритроцит|тромбоцит|лейкоцит|нейтрофил|эозинофил|базофил|моноцит|лимфоцит|соэ|mcv|mch|rdw|mpv|pdw|pct/.test(n)},
 {id:'chemistryOverview',match:n=>true}];
 const byName=new Map();
-for(const x of results){const date=dated.get(x.report_id);if(!date)continue;const name=x.analyte_name||x.analyte_code||'Показатель';const key=name.toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z0-9%]+/g,' ').trim()+'|'+String(x.unit||'').trim().toLowerCase();if(!byName.has(key))byName.set(key,[]);byName.get(key).push({...x,date,name})}
+for(const x of results){const date=dated.get(x.report_id);if(!date)continue;const name=canonicalAnalyteName(x.analyte_name||x.analyte_code||'Показатель');const key=name.toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z0-9%]+/g,' ').trim()+'|'+String(x.unit||'').trim().toLowerCase();if(!byName.has(key))byName.set(key,[]);byName.get(key).push({...x,date,name})}
 const items=[...byName.values()].map(points=>{points.sort((a,b)=>a.date.localeCompare(b.date));return{latest:points[points.length-1],points}}).sort((a,b)=>a.latest.name.localeCompare(b.latest.name,'ru'));
 for(const g of groups){const target=e(g.id);target.replaceChildren();const subset=items.filter(item=>{const name=item.latest.name.toLowerCase();return g.id==='chemistryOverview'?!groups.slice(0,3).some(group=>group.match(name)):g.match(name)});
 if(!subset.length){text(target,'p','Пока нет доступных результатов.');continue}
 const chemistryCategories=[
-{title:'Биохимия крови',match:n=>/креатинин|скф|мочевин|мочев|билирубин|алт|аст|ггт|щелочн|альбумин|общий белок|глюкоз|мочев|кальций|магний|натрий|калий|хлорид|фосфор|амилаз|липаз/.test(n)},
+{title:'Биохимия крови',match:n=>/креатинин|скф|мочевин|мочев|ферритин|билирубин|алт|аст|ггт|щелочн|альбумин|общий белок|глюкоз|мочев|кальций|магний|натрий|калий|хлорид|фосфор|амилаз|липаз/.test(n)},
 {title:'Липидный профиль',match:n=>/холестерин|триглицерид|лпнп|лпвп|лпонп|аполипопротеин|липопротеин/.test(n)},
 {title:'Коагулограмма',match:n=>/ачтв|мно|протромбин|тромбиновое время|фибриноген|д димер|d димер/.test(n)},
 {title:'Инфекции и серология',match:n=>/вич|hbsag|гепатит|сифилис|антитела|серолог/.test(n)},
