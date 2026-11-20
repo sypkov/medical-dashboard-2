@@ -1,0 +1,35 @@
+name: Medical data regression tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/medical-tests.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/medical-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  medical-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out public application code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate dashboard JavaScript syntax
+        run: |
+          node -e "const fs=require('node:fs');const vm=require('node:vm');const html=fs.readFileSync('index.html','utf8');const m=html.match(/<script>([\\s\\S]*?)<\\/script>/);if(!m)throw Error('Inline dashboard script missing');new vm.Script(m[1]);console.log('Dashboard JavaScript syntax OK')"
+      - name: Run medical data regression tests
+        run: node --test tests/*.test.cjs
