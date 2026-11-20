@@ -182,3 +182,23 @@ test('filtering across a report and an analyte is order-independent', () => {
   sandbox.filterLabReports();
   assert.equal(row.classList.hidden,false);
 });
+
+test('abnormal-only filter hides normal results and reports without abnormalities', () => {
+  function classes(){return {hidden:false,toggle(name,on){if(name==='hidden')this.hidden=on}}}
+  function card(rows){return {dataset:{reportSearch:'лаборатория'},classList:classes(),
+    querySelectorAll(){return rows},querySelector(){return null}}}
+  const abnormal={dataset:{name:'гематокрит',abnormal:'true'},classList:classes()};
+  const normal={dataset:{name:'гемоглобин',abnormal:'false'},classList:classes()};
+  const first=card([abnormal,normal]),second=card([{dataset:{name:'эстрадиол',abnormal:'false'},classList:classes()}]);
+  const controls={labsFilter:{value:''},onlyAbnormal:{checked:true},labsList:{children:[first,second]}};
+  sandbox.e=id=>controls[id];
+  sandbox.filterLabReports();
+  assert.equal(abnormal.classList.hidden,false);
+  assert.equal(normal.classList.hidden,true);
+  assert.equal(first.classList.hidden,false);
+  assert.equal(second.classList.hidden,true);
+  controls.onlyAbnormal.checked=false;
+  sandbox.filterLabReports();
+  assert.equal(normal.classList.hidden,false);
+  assert.equal(second.classList.hidden,false);
+});
