@@ -125,8 +125,11 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
     } else if (url.pathname.endsWith('/md_memberships')) {
       body = [{patient_id:patient,role:'owner'}];
     } else if (url.pathname.endsWith('/md_therapy_events')) {
-      body = [{event_at:'2026-01-10T08:00:00Z',medication:'Тестовый препарат',
-        dose:1,dose_unit:'мг',note:'Подтверждено в Google Sheets. Время инъекции не указано. · Источник: Google Sheets GZT; точное время не указано.'}];
+      body = [{event_at:'2026-01-10T08:00:00Z',medication:'Омнадрен',
+        dose:100,dose_unit:'мг',note:'Подтверждено в Google Sheets. Время инъекции не указано. · Источник: Google Sheets GZT; точное время не указано.'},
+        {event_at:'2026-01-03T08:00:00Z',medication:'Омнадрен',dose:125,dose_unit:'мг',note:'По плану'},
+        {event_at:'2026-01-10T08:00:00Z',medication:'ХГЧ',dose:500,dose_unit:'ед'},
+        {event_at:'2026-01-10T08:00:00Z',medication:'Тирзепатид',dose:2.5,dose_unit:'мг'}];
     } else if (url.pathname.endsWith('/md_diary_entries')) {
       body = [
         {measured_at:'2026-01-01T08:00:00Z',metric:'systolic',value:120,unit:'мм рт. ст.'},
@@ -148,9 +151,16 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await page.locator('#email').fill('mobile@example.invalid');
   await page.locator('#password').fill('synthetic-password');
   await page.locator('#login').click();
-  await expect(page.locator('#protocolOverview')).toContainText('Тестовый препарат');
+  await expect(page.locator('#protocolOverview')).toContainText('Омнадрен');
   await page.getByRole('link',{name:'Протокол',exact:true}).click();
-  const row = page.locator('.protocol-history-table tbody tr').first();
+  await expect(page.locator('.protocol-history-table')).toHaveCount(3);
+  const omnadren = page.getByRole('table',{name:'Омнадрен — история инъекций'});
+  await expect(omnadren.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('.protocol-dose-total')).toHaveText('Всего введено: 225 мг');
+  await expect(omnadren.locator('.protocol-cumulative')).toHaveText(['Накоплено: 225 мг','Накоплено: 125 мг']);
+  await expect(page.getByRole('table',{name:'ХГЧ — история инъекций'})).not.toContainText('Омнадрен');
+  await expect(page.getByRole('table',{name:'Тирзепатид — история инъекций'})).not.toContainText('ХГЧ');
+  const row = omnadren.locator('tbody tr').first();
   await expect(row).toHaveCSS('display','grid');
   await expect(row.locator('td').first()).toHaveText('10.01.2026');
   await expect(row.locator('td').nth(3).locator('span')).toHaveText('Выполнено');
