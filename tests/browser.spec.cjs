@@ -71,9 +71,23 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await expect(page.locator('#labsList')).toContainText('Глюкоза', { timeout: 15000 });
   await page.locator('#labsList details').first().evaluate(el => { el.open = true; });
   await expect(page.locator('#labsList .row').first()).toContainText('5.2');
+  await page.locator('#labsFilter').fill('10.01.2026 ГЛЮКОЗА');
+  await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
+  await page.locator('#labsFilter').fill('несуществующий показатель');
+  await expect(page.locator('#labsList .lab-report').first()).toHaveClass(/hidden/);
+  await page.locator('#labsFilter').fill('');
+  await page.locator('#onlyAbnormal').check();
+  await expect(page.locator('#labsList .lab-report').first()).toHaveClass(/hidden/);
+  await page.locator('#onlyAbnormal').uncheck();
+  await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
+  await page.locator('#sourceArchive summary').first().click();
+  await expect(page.locator('#archiveContent')).toContainText('Архив недоступен для этого аккаунта.');
   await page.locator('#accountLogout').click();
   await expect(page.locator('#overview')).toBeHidden();
   await expect(page.locator('#labsList')).toBeEmpty();
+  await expect(page.locator('#archiveContent')).toBeEmpty();
+  await expect(page.locator('#bloodPressureChart')).toBeEmpty();
+  await expect(page.locator('#sourceArchive')).not.toHaveAttribute('open');
 });
 
 test('Failed authentication never reveals the medical dashboard', async ({ page }) => {
