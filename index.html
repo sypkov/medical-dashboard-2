@@ -94,7 +94,7 @@ body{background:#f4f3ee}.header{padding:20px 24px}.header h1{font-size:20px;font
 .protocol-dose-breakdown{font-size:13px;color:#666;margin:4px 0}
 .protocol-medication .protocol-table-wrap{margin-top:12px}
 @media(max-width:700px){.protocol-history-table .protocol-cumulative{grid-column:1/-1;color:#3c3489;font-weight:600}}
-</style></head><body><header class="header"><div><h1>Медицинский дашборд</h1><p>Персональный обзор здоровья · защищённый доступ</p></div><img src="./shield.svg" alt=""></header><main><section class="card hidden" id="accountBar"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong>Мой медицинский дашборд</strong><small id="accountName" style="display:block">Аккаунт авторизован</small></div><button id="accountLogout" type="button">Выйти</button></div></section><section class="card" id="loginCard"><h2>01 / Вход</h2><p id="auth">Не авторизован</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Пароль<input id="password" type="password" autocomplete="current-password"></label><button id="login">Войти</button><button id="logout" disabled>Выйти</button></section><section class="card" id="recoveryCard"><h2>Восстановление доступа</h2><p>Запроси письмо для смены пароля. Если Supabase сообщает о лимите писем, дождись его сброса.</p><label>Email для восстановления<input id="recoveryEmail" type="email" autocomplete="email"></label><button id="requestRecovery">Отправить письмо</button><div id="newPasswordPanel" class="hidden"><p>Ссылка восстановления подтверждена. Установи новый пароль.</p><label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="12"></label><label>Повтори пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="12"></label><button id="savePassword">Сохранить новый пароль</button></div></section><section class="hidden" id="overview">
+</style><style>.consultation-entry+ .consultation-entry{border-top:1px solid #dedbd2;margin-top:16px;padding-top:12px}.consultation-entry h4{color:#3c3489;margin:12px 0 6px}.consultation-entry{overflow-wrap:anywhere}</style></head><body><header class="header"><div><h1>Медицинский дашборд</h1><p>Персональный обзор здоровья · защищённый доступ</p></div><img src="./shield.svg" alt=""></header><main><section class="card hidden" id="accountBar"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong>Мой медицинский дашборд</strong><small id="accountName" style="display:block">Аккаунт авторизован</small></div><button id="accountLogout" type="button">Выйти</button></div></section><section class="card" id="loginCard"><h2>01 / Вход</h2><p id="auth">Не авторизован</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Пароль<input id="password" type="password" autocomplete="current-password"></label><button id="login">Войти</button><button id="logout" disabled>Выйти</button></section><section class="card" id="recoveryCard"><h2>Восстановление доступа</h2><p>Запроси письмо для смены пароля. Если Supabase сообщает о лимите писем, дождись его сброса.</p><label>Email для восстановления<input id="recoveryEmail" type="email" autocomplete="email"></label><button id="requestRecovery">Отправить письмо</button><div id="newPasswordPanel" class="hidden"><p>Ссылка восстановления подтверждена. Установи новый пароль.</p><label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="12"></label><label>Повтори пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="12"></label><button id="savePassword">Сохранить новый пароль</button></div></section><section class="hidden" id="overview">
 <nav class="reference-nav" aria-label="Разделы"><a class="active" href="#overview">Обзор</a><a href="#hormonesSection">Гормоны</a><a href="#hematologySection">Гематология</a><a href="#chemistrySection">Биохимия</a><a href="#markersSection">Маркеры</a><a href="#protocolSection">Протокол</a><a href="#bodySection">Состав тела и давление</a><a href="#visitsSection">Врачи</a><a href="#labsCard">Все анализы</a><a href="#importCard">Импорт</a></nav>
 <div class="reference-sticky"><div class="reference-sticky-grid" id="overviewMetrics"></div></div>
 <div class="section-controls"><button type="button" id="expandDashboardSections">Развернуть всё</button><button type="button" id="collapseDashboardSections">Свернуть всё</button></div>
@@ -241,7 +241,50 @@ let visibleCount=0;for(const [metric,points] of byMetric){if(['systolic','diasto
 drawMedicalLine(e('bloodPressureChart'),[{name:'Систолическое',color:'#e64980',points:byMetric.get('systolic')||[]},{name:'Диастолическое',color:'#4c6ef5',points:byMetric.get('diastolic')||[]}],'мм рт. ст.');drawMedicalLine(e('pulseChartNew'),[{name:'Пульс',color:'#1d9e75',points:byMetric.get('pulse')||[]}],'уд/мин')}
 document.querySelectorAll('.body-period').forEach(button=>button.addEventListener('click',()=>{bodyPeriod=button.dataset.days;document.querySelectorAll('.body-period').forEach(b=>b.classList.toggle('active',b===button));renderBodyHistory(bodyHistory)}));
 async function loadProtocolNotes(serial=labsRequestSerial){const epoch=privateViewEpoch;if(!signed||serial!==labsRequestSerial)return;const host=e('protocolNotes');if(!host)return;host.replaceChildren();try{const rows=await labReadPages('md_content_blocks?select=title,body,kind,sensitivity,created_at&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.protocol_history&order=created_at.asc,id.asc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;if(!rows.length){text(host,'div','История решений по протоколу пока не добавлена.','reference-empty');return}text(host,'h3','История решений и изменений схемы');for(const row of rows){const details=document.createElement('details');details.className='protocol-note';host.append(details);const summary=document.createElement('summary');summary.textContent=row.title||'Историческое примечание';details.append(summary);text(details,'p',row.body||'')}}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)text(host,'p','Не удалось загрузить историю протокола: '+(err.message||String(err)),'reference-empty')}}
-let consultationHistory=[];function renderConsultations(){const host=e('visitsOverview');if(!host)return;host.replaceChildren();const query=(e('visitsSearch').value||'').trim().toLocaleLowerCase('ru-RU');const visible=consultationHistory.filter(row=>(String(row.title||'')+' '+String(row.body||'')).toLocaleLowerCase('ru-RU').includes(query));text(host,'div','Найдено записей: '+visible.length+' из '+consultationHistory.length,'protocol-history-title');if(!visible.length){text(host,'div',consultationHistory.length?'По запросу ничего не найдено.':'Консультации пока не добавлены в защищённую базу.','reference-empty');return}for(const row of visible){const details=document.createElement('details');details.className='protocol-note';host.append(details);const summary=document.createElement('summary');summary.textContent=row.title||'Консультация';details.append(summary);text(details,'p',row.body||'')}}
+let consultationHistory=[];function consultationSpecialty(title){
+  const name=String(title||'Консультации').split(/\s+[—–]\s+/)[0].trim();
+  const normalized=name.toLocaleLowerCase('ru-RU');
+  if(normalized==='косметология')return 'Косметолог';
+  if(normalized==='андролог/косметолог')return 'Андролог';
+  return name||'Консультации';
+}
+function consultationDate(row){
+  const match=String(row.title||'').match(/(\d{2})\.(\d{2})\.(\d{4})/);
+  return match?match[3]+'-'+match[2]+'-'+match[1]:'';
+}
+function renderConsultations(){
+  const host=e('visitsOverview');
+  if(!host)return;
+  host.replaceChildren();
+  const query=(e('visitsSearch').value||'').trim().toLocaleLowerCase('ru-RU');
+  const groups=new Map();
+  let visibleCount=0;
+  for(const row of consultationHistory){
+    const specialty=consultationSpecialty(row.title);
+    const searchable=[specialty,row.title,row.body].filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
+    if(query&&!searchable.includes(query))continue;
+    if(!groups.has(specialty))groups.set(specialty,[]);
+    groups.get(specialty).push(row);
+    visibleCount++;
+  }
+  text(host,'div','Найдено записей: '+visibleCount+' из '+consultationHistory.length,'protocol-history-title');
+  if(!groups.size){
+    text(host,'div',consultationHistory.length?'По запросу ничего не найдено.':'Консультации пока не добавлены в защищённую базу.','reference-empty');
+    return;
+  }
+  for(const [specialty,rows] of [...groups].sort((a,b)=>a[0].localeCompare(b[0],'ru'))){
+    const details=document.createElement('details');
+    details.className='protocol-note consultation-specialty';
+    host.append(details);
+    text(details,'summary',specialty);
+    rows.sort((a,b)=>consultationDate(b).localeCompare(consultationDate(a)));
+    for(const row of rows){
+      const entry=text(details,'section','','consultation-entry');
+      text(entry,'h4',row.title||'Консультация');
+      text(entry,'p',row.body||'');
+    }
+  }
+}
 async function loadConsultations(serial=labsRequestSerial){const epoch=privateViewEpoch;if(!signed||serial!==labsRequestSerial)return;const host=e('visitsOverview');if(!host)return;host.replaceChildren();try{const rows=await labReadPages('md_content_blocks?select=title,body,kind&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.consultation_history&order=title.asc,id.asc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;consultationHistory=rows;renderConsultations()}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial){consultationHistory=[];host.replaceChildren();text(host,'div','Не удалось загрузить консультации: '+(err.message||String(err)),'reference-empty')}}}
 e('visitsSearch').addEventListener('input',renderConsultations);e('visitsExpand').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=true));e('visitsCollapse').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=false));
 
