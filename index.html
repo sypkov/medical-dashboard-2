@@ -89,6 +89,7 @@ body{background:#f4f3ee}.header{padding:20px 24px}.header h1{font-size:20px;font
 }
 </style><style>#overview .reference-panel .lab-date-heading{grid-column:1/-1;margin:14px 0 2px;padding:0 0 8px;border-bottom:1px solid #d3d1c7;color:#3c3489;font-size:16px;font-weight:700}#overview .reference-panel .lab-date-heading:first-child{margin-top:0}</style><style>
 .protocol-medication{margin:0 0 24px}
+.protocol-stock-balance{font-size:16px;font-weight:700;color:#3c3489}.protocol-stock-receipt{margin:6px 0;font-size:13px}
 .protocol-dose-total{font-weight:700;font-size:16px;color:#3c3489;margin:8px 0}
 .protocol-dose-breakdown{font-size:13px;color:#666;margin:4px 0}
 .protocol-medication .protocol-table-wrap{margin-top:12px}
@@ -244,7 +245,7 @@ let consultationHistory=[];function renderConsultations(){const host=e('visitsOv
 async function loadConsultations(serial=labsRequestSerial){const epoch=privateViewEpoch;if(!signed||serial!==labsRequestSerial)return;const host=e('visitsOverview');if(!host)return;host.replaceChildren();try{const rows=await labReadPages('md_content_blocks?select=title,body,kind&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.consultation_history&order=title.asc,id.asc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;consultationHistory=rows;renderConsultations()}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial){consultationHistory=[];host.replaceChildren();text(host,'div','Не удалось загрузить консультации: '+(err.message||String(err)),'reference-empty')}}}
 e('visitsSearch').addEventListener('input',renderConsultations);e('visitsExpand').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=true));e('visitsCollapse').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=false));
 
-function renderProtocolTables(host,rows){
+function renderProtocolTables(host,rows,inventory=null){
   const groups=new Map(['Омнадрен','ХГЧ','Тирзепатид'].map(name=>[name,[]]));
   for(const row of rows){
     const name=String(row.medication||'Препарат').trim();
@@ -263,6 +264,12 @@ function renderProtocolTables(host,rows){
     let total=0;
     let missing=0;
     const omnadren=name==='Омнадрен';
+    const stock=omnadren&&inventory&&inventory.medication===name?inventory:null;
+    const mgPerAmpoule=Number(stock?.mg_per_ampoule);
+    const receipts=Array.isArray(stock?.receipts)?stock.receipts:[];
+    const stockValid=stock&&Number.isFinite(mgPerAmpoule)&&mgPerAmpoule>0&&receipts.length>0&&receipts.every(receipt=>validLabDate(receipt.date)&&Number.isFinite(Number(receipt.ampoules))&&Number(receipt.ampoules)>0);
+    const receivedBy=date=>receipts.filter(receipt=>receipt.date<=date).reduce((sum,receipt)=>sum+Number(receipt.ampoules)*mgPerAmpoule,0);
+    const stockText=mg=>format(mg)+' мг · '+format(mg/mgPerAmpoule)+' ампулы в эквиваленте';
     if(omnadren){
       for(const event of ordered){
         const valid=event.dose!==null&&event.dose!==undefined&&String(event.dose).trim()!==''&&Number.isFinite(Number(event.dose))&&Number(event.dose)>=0&&String(event.dose_unit||'').trim().toLowerCase()==='мг';
@@ -278,6 +285,14 @@ function renderProtocolTables(host,rows){
         text(section,'div',format(dose)+' мг × '+count+' = '+format(dose*count)+' мг','protocol-dose-breakdown');
       }
       if(missing)text(section,'p','Не включено в сумму записей с неподтверждённой дозой в мг: '+missing);
+      if(stockValid&&!missing){
+        const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Saratov'}).format(new Date());
+        const currentTotal=ordered.filter(event=>String(event.event_at).slice(0,10)<=today).reduce((sum,event)=>sum+Number(event.dose),0);
+        text(section,'p','Расчётный остаток: '+stockText(receivedBy(today)-currentTotal),'protocol-stock-balance');
+        text(section,'div','1 ампула = '+format(Number(stock.ml_per_ampoule))+' мл = '+format(mgPerAmpoule)+' мг');
+        for(const receipt of receipts)text(section,'div',receipt.label+' · '+displayMedicalDate(receipt.date)+' · '+format(Number(receipt.ampoules))+' ампул','protocol-stock-receipt');
+        text(section,'small','Остаток рассчитан по введённым дозам, без учёта потерь при наборе и утилизации.');
+      }
     }
     const wrap=text(section,'div','','protocol-table-wrap');
     const table=document.createElement('table');
@@ -287,7 +302,7 @@ function renderProtocolTables(host,rows){
     const head=document.createElement('thead');table.append(head);
     const header=text(head,'tr','');
     const labels=['Дата','Препарат','Доза','Примечание'];
-    if(omnadren)labels.push('Накопительная доза');
+    if(omnadren)labels.push(stockValid?'Накопительная доза и остаток':'Накопительная доза');
     for(const label of labels)text(header,'th',label);
     const body=document.createElement('tbody');table.append(body);
     for(const event of [...ordered].reverse()){
@@ -298,7 +313,9 @@ function renderProtocolTables(host,rows){
       renderProtocolNote(text(row,'td',''),event.note);
       if(omnadren){
         const value=cumulative.get(event);
-        text(row,'td','Накоплено: '+format(value.total)+' мг'+(value.missing?' · неполный итог':''),'protocol-cumulative');
+        const balance=text(row,'td','','protocol-cumulative');
+        text(balance,'div','Накоплено: '+format(value.total)+' мг'+(value.missing?' · неполный итог':''));
+        if(stockValid&&!value.missing)text(balance,'div','Остаток: '+stockText(receivedBy(String(event.event_at).slice(0,10))-value.total));
       }
     }
   }
@@ -341,7 +358,15 @@ async function loadSupplemental(serial=labsRequestSerial){const epoch=privateVie
 const groups=[
 {id:'protocolOverview',table:'md_therapy_events',select:'event_at,medication,dose,dose_unit,note',date:'event_at',render:(row,item)=>{text(item,'span',row.medication||'Препарат','card-label');text(item,'strong',[row.dose,row.dose_unit].filter(x=>x!==null&&x!==undefined&&x!=='').join(' ')||'Доза не указана');if(row.note)text(item,'span',row.note,'ref')}},
 {id:'bodyOverview',table:'md_diary_entries',select:'measured_at,metric,value,unit',date:'measured_at',render:(row,item)=>{text(item,'span',row.metric||'Измерение','card-label');text(item,'strong',[row.value,row.unit].filter(x=>x!==null&&x!==undefined&&x!=='').join(' '))}}];
-await Promise.all(groups.map(async group=>{const host=e(group.id);if(!host)return;host.replaceChildren();try{const rows=await labReadPages(group.table+'?select='+group.select+'&patient_id=eq.'+encodeURIComponent(PATIENT)+'&order='+group.date+'.desc,id.desc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;if(!rows.length){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([])}else{therapyTimeline=[];renderTherapyTimeline()}text(host,'div',group.id==='protocolOverview'?'Назначения пока не добавлены в защищённую базу.':'Измерения пока не добавлены в защищённую базу.','reference-empty');if(group.id==='protocolOverview')loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});return}if(group.id==='bodyOverview'){bodyHistory=rows;renderBodyHistory(rows);return}if(group.id==='protocolOverview'){therapyTimeline=rows;renderTherapyTimeline();loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});renderProtocolTables(host,rows);return}
+await Promise.all(groups.map(async group=>{const host=e(group.id);if(!host)return;host.replaceChildren();try{const rows=await labReadPages(group.table+'?select='+group.select+'&patient_id=eq.'+encodeURIComponent(PATIENT)+'&order='+group.date+'.desc,id.desc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;if(!rows.length){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([])}else{therapyTimeline=[];renderTherapyTimeline()}text(host,'div',group.id==='protocolOverview'?'Назначения пока не добавлены в защищённую базу.':'Измерения пока не добавлены в защищённую базу.','reference-empty');if(group.id==='protocolOverview')loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});return}if(group.id==='bodyOverview'){bodyHistory=rows;renderBodyHistory(rows);return}if(group.id==='protocolOverview'){therapyTimeline=rows;renderTherapyTimeline();loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});let inventory=null;
+try{
+  const blocks=await labReadPages('md_content_blocks?select=body&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.medication_inventory&order=created_at.desc,id.desc',epoch,serial);
+  inventory=blocks.map(block=>JSON.parse(block.body)).find(block=>block.medication==='Омнадрен')||null;
+}catch(error){
+  if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)text(host,'p','Не удалось загрузить запас препарата.');
+}
+if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;
+renderProtocolTables(host,rows,inventory);return}
 
 for(const row of rows){const item=text(host,'div','','data-row');group.render(row,item);text(item,'span',String(row[group.date]||'').slice(0,10),'date')}}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([]);host.replaceChildren()}else{therapyTimeline=[];renderTherapyTimeline();host.replaceChildren();e('protocolNotes').replaceChildren()}text(host,'div','Не удалось загрузить данные: '+(err.message||String(err)),'reference-empty')}}}))
 }
