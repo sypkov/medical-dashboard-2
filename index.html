@@ -193,6 +193,17 @@ button:hover{filter:brightness(.96)}
  .body-vitals{grid-template-columns:1fr}.body-big-chart{height:auto;aspect-ratio:640/235;min-height:160px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style><style id="chart-interaction">
+.medical-chart{position:relative;display:flow-root;width:100%;min-width:0}
+.medical-chart svg{cursor:crosshair;touch-action:pan-y}
+.medical-chart-tooltip{position:absolute;z-index:5;max-width:min(230px,calc(100% - 12px));padding:12px 15px;border:1px solid var(--border);border-radius:16px;background:var(--paper);box-shadow:0 4px 18px #302b1e14;pointer-events:none;line-height:1.45;overflow-wrap:anywhere}
+.medical-chart-tooltip[hidden]{display:none!important}
+.medical-chart-tooltip .tooltip-date{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+.medical-chart-tooltip .tooltip-value{display:block;font:500 17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--green);margin:5px 0 0;letter-spacing:0}
+.medical-chart-tooltip .tooltip-lab{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.chart-selection-guide{stroke:#9eaa9f;stroke-width:1;stroke-dasharray:4 4;pointer-events:none}
+.chart-selection{fill:var(--green);stroke:var(--paper);stroke-width:3;pointer-events:none}
+.medical-chart [role=button]:focus-visible{outline:none;stroke:var(--rust);stroke-width:3}
 </style></head><body><header class="header"><div><h1>Лабораторный журнал</h1><p>Персональная история здоровья</p></div></header><main><section class="card hidden" id="accountBar"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong>Мой медицинский дашборд</strong><small id="accountName" style="display:block">Аккаунт авторизован</small></div><button id="accountLogout" type="button">Выйти</button></div></section><section class="card" id="loginCard"><h2>Вход в журнал</h2><p id="auth">Не авторизован</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Пароль<input id="password" type="password" autocomplete="current-password"></label><button id="login">Войти</button><button id="logout" disabled>Выйти</button></section><section class="card" id="recoveryCard"><h2>Восстановление доступа</h2><p>Запроси письмо для смены пароля. Если Supabase сообщает о лимите писем, дождись его сброса.</p><label>Email для восстановления<input id="recoveryEmail" type="email" autocomplete="email"></label><button id="requestRecovery">Отправить письмо</button><div id="newPasswordPanel" class="hidden"><p>Ссылка восстановления подтверждена. Установи новый пароль.</p><label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="12"></label><label>Повтори пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="12"></label><button id="savePassword">Сохранить новый пароль</button></div></section><section class="hidden" id="overview">
 <nav class="reference-nav" aria-label="Разделы"><a class="active" href="#overview">Обзор</a><a href="#hormonesSection">Гормоны</a><a href="#hematologySection">Гематология</a><a href="#chemistrySection">Биохимия</a><a href="#markersSection">Маркеры</a><a href="#protocolSection">Протокол</a><a href="#bodySection">Состав тела и давление</a><a href="#visitsSection">Врачи</a><a href="#labsCard">Все анализы</a><a href="#importCard">Импорт</a></nav>
 <div class="reference-sticky"><div class="reference-sticky-grid" id="overviewMetrics"></div></div>
@@ -263,6 +274,92 @@ if(location.hash){const initialId=decodeURIComponent(location.hash.slice(1));if(
 function canonicalBloodCountUnit(name,unit){const n=String(name||'').trim().toLowerCase(),u=String(unit||'').trim().replace(/\s+/g,'').replace(/х/g,'x').replace(/×/g,'x');if(n==='тромбоциты'&&/^(?:x)?10(?:\^9|⁹)\/л$/i.test(u))return '×10⁹/л';if(n==='эритроциты'&&/^(?:x)?10(?:\^12|¹²)\/л$/i.test(u))return '×10¹²/л';return unit}
 function trendMedicalValue(r){const name=String(r.analyte_name||r.analyte_code||'').toLowerCase();const raw=r.numeric_value;let value=raw===null||raw===undefined||String(raw).trim()===''?NaN:Number(raw),unit=String(r.unit||'').trim();if(name==='гемоглобин'&&/^(г\/дл|g\/dl)$/i.test(unit)){value*=10;unit='г/л'}else if(name==='гемоглобин'&&/^(г\/л|g\/l)$/i.test(unit))unit='г/л';unit=canonicalBloodCountUnit(name,unit);return{value,unit}}
 function canonicalAnalyteName(name){const raw=String(name||'').trim();const normalized=raw.toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ');const aliases={'алат':'АЛТ','алт':'АЛТ','асат':'АСТ','аст':'АСТ','ггт':'Гамма-ГТ','гамма-гт':'Гамма-ГТ'};return aliases[normalized]||raw}
+function medicalSmoothPath(points){
+  if(!points.length)return '';
+  let path='M '+points[0].x+' '+points[0].y;
+  if(points.length===1)return path;
+  const widths=[],slopes=[];
+  for(let index=0;index<points.length-1;index++){
+    const width=points[index+1].x-points[index].x;
+    widths.push(width);slopes.push(width>0?(points[index+1].y-points[index].y)/width:0);
+  }
+  const tangents=points.map((point,index)=>{
+    if(index===0)return slopes[0];
+    if(index===points.length-1)return slopes[slopes.length-1];
+    const before=slopes[index-1],after=slopes[index];
+    if(widths[index-1]<=0||widths[index]<=0||before*after<=0)return 0;
+    const firstWeight=2*widths[index]+widths[index-1];
+    const secondWeight=widths[index]+2*widths[index-1];
+    return (firstWeight+secondWeight)/(firstWeight/before+secondWeight/after);
+  });
+  for(let index=0;index<slopes.length;index++){
+    if(slopes[index]===0){tangents[index]=0;tangents[index+1]=0;continue}
+    const magnitude=Math.hypot(tangents[index]/slopes[index],tangents[index+1]/slopes[index]);
+    if(magnitude>3){const scale=3/magnitude;tangents[index]*=scale;tangents[index+1]*=scale}
+  }
+  for(let index=0;index<points.length-1;index++){
+    const from=points[index],to=points[index+1],width=widths[index];
+    if(width<=0){path+=' L '+to.x+' '+to.y;continue}
+    path+=' C '+(from.x+width/3)+' '+(from.y+tangents[index]*width/3)+' '+
+      (to.x-width/3)+' '+(to.y-tangents[index+1]*width/3)+' '+to.x+' '+to.y;
+  }
+  return path;
+}
+
+function attachMedicalChartTooltip(svg,entries,onSelect){
+  if(!entries.length||!svg.parentNode)return;
+  const wrapper=document.createElement('div');wrapper.className='medical-chart';
+  svg.parentNode.insertBefore(wrapper,svg);wrapper.append(svg);
+  const tooltip=text(wrapper,'div','','medical-chart-tooltip');
+  tooltip.hidden=true;tooltip.setAttribute('role','tooltip');
+  const date=text(tooltip,'div','','tooltip-date');
+  const value=text(tooltip,'strong','','tooltip-value');
+  const lab=text(tooltip,'small','','tooltip-lab');
+  const ns='http://www.w3.org/2000/svg';
+  const guide=document.createElementNS(ns,'line');guide.classList.add('chart-selection-guide');
+  guide.setAttribute('y1','18');guide.setAttribute('y2',String(Math.max(svg.viewBox.baseVal.height-45,...entries.map(entry=>entry.y))));
+  const selected=document.createElementNS(ns,'circle');selected.classList.add('chart-selection');selected.setAttribute('r','6');
+  guide.style.display='none';selected.style.display='none';svg.append(guide,selected);
+  function show(entry){
+    date.textContent=displayMedicalDate(entry.date);
+    value.textContent=(entry.series?entry.series+': ':'')+Number(entry.value).toLocaleString('ru-RU',{maximumFractionDigits:6})+' '+(entry.unit||'');
+    lab.textContent=entry.lab||'';lab.hidden=!entry.lab;
+    tooltip.hidden=false;guide.style.display='';selected.style.display='';
+    guide.setAttribute('x1',String(entry.x));guide.setAttribute('x2',String(entry.x));
+    selected.setAttribute('cx',String(entry.x));selected.setAttribute('cy',String(entry.y));
+    const matrix=svg.getScreenCTM();
+    if(matrix){
+      const point=svg.createSVGPoint();point.x=entry.x;point.y=entry.y;
+      const screen=point.matrixTransform(matrix),box=wrapper.getBoundingClientRect();
+      const right=screen.x-box.left+14,left=screen.x-box.left-tooltip.offsetWidth-14;
+      tooltip.style.left=Math.max(6,Math.min(wrapper.clientWidth-tooltip.offsetWidth-6,right+tooltip.offsetWidth>wrapper.clientWidth?left:right))+'px';
+      tooltip.style.top=Math.max(4,Math.min(wrapper.clientHeight-tooltip.offsetHeight-4,screen.y-box.top-tooltip.offsetHeight-12))+'px';
+    }
+    if(onSelect)onSelect(entry);
+  }
+  function choose(event){
+    const direct=entries.find(entry=>entry.node===event.target);
+    if(direct){show(direct);return}
+    const matrix=svg.getScreenCTM();if(!matrix)return;
+    const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+    const local=point.matrixTransform(matrix.inverse());
+    const nearest=entries.reduce((best,entry)=>Math.hypot(entry.x-local.x,entry.y-local.y)<Math.hypot(best.x-local.x,best.y-local.y)?entry:best,entries[0]);
+    show(nearest);
+  }
+  for(const entry of entries){
+    if(!entry.node)continue;
+    entry.node.setAttribute('tabindex','0');entry.node.setAttribute('role','button');
+    entry.node.setAttribute('aria-label',displayMedicalDate(entry.date)+' · '+(entry.series||'')+' '+entry.value+' '+(entry.unit||'')+' · '+(entry.lab||''));
+  }
+  svg.addEventListener('click',choose);
+  svg.addEventListener('pointermove',event=>{if(event.pointerType==='mouse')choose(event)});
+  svg.addEventListener('focusin',event=>{const entry=entries.find(item=>item.node===event.target);if(entry)show(entry)});
+  svg.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){tooltip.hidden=true;guide.style.display='none';selected.style.display='none'}
+    if(event.key==='Enter'||event.key===' '){const entry=entries.find(item=>item.node===event.target);if(entry){event.preventDefault();show(entry)}}
+  });
+}
+
 function renderTrends(reports,results){
 const host=e('labTrends');host.replaceChildren();const dated=new Map(reports.map(r=>[r.id,r.sample_date||r.report_date]));const labs=new Map(reports.map(r=>[r.id,r.lab_name||'Лаборатория не указана']));const series=new Map();
 function normalize(s){return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z0-9%]+/g,' ').trim()}
@@ -275,10 +372,10 @@ for(const r of results){if(r.numeric_value==null||!validLabDate(dated.get(r.repo
 let count=0;for(const points of series.values()){points.sort((a,b)=>a.date.localeCompare(b.date));if(points.length<2)continue;count++;const panel=text(host,'div','','lab-report');text(panel,'strong',points[0].name+' · '+points[0].unit);
 const values=points.map(p=>p.value),min=Math.min(...values),max=Math.max(...values),span=max-min||1;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 600 150');svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика '+points[0].name);svg.style.cssText='width:100%;height:150px;display:block;margin:12px 0';panel.append(svg);
 for(const y of [25,65,105]){const grid=document.createElementNS('http://www.w3.org/2000/svg','line');grid.setAttribute('x1','35');grid.setAttribute('x2','590');grid.setAttribute('y1',String(y));grid.setAttribute('y2',String(y));grid.setAttribute('stroke','#e5e2db');svg.append(grid)}
-const first=Date.parse(points[0].date+'T00:00:00Z'),last=Date.parse(points[points.length-1].date+'T00:00:00Z');const sameDay=new Map();for(const p of points){if(!sameDay.has(p.date))sameDay.set(p.date,[]);sameDay.get(p.date).push(p)}const xPositions=new Map();for(const group of sameDay.values()){const date=Date.parse(group[0].date+'T00:00:00Z');const center=first===last?312.5:35+555*(date-first)/(last-first);const step=Math.min(8,Math.max(0,2*Math.min(center-35,590-center))/Math.max(1,group.length-1));group.forEach((p,i)=>xPositions.set(p,center+(i-(group.length-1)/2)*step))}const xOf=p=>xPositions.get(p);const yOf=p=>110-(p.value-min)/span*90;const poly=document.createElementNS('http://www.w3.org/2000/svg','polyline');poly.setAttribute('points',points.map(p=>xOf(p)+','+yOf(p)).join(' '));poly.setAttribute('fill','none');poly.setAttribute('stroke','#397b64');poly.setAttribute('stroke-width','2.5');poly.setAttribute('stroke-linecap','round');poly.setAttribute('stroke-linejoin','round');svg.append(poly);
+const first=Date.parse(points[0].date+'T00:00:00Z'),last=Date.parse(points[points.length-1].date+'T00:00:00Z');const sameDay=new Map();for(const p of points){if(!sameDay.has(p.date))sameDay.set(p.date,[]);sameDay.get(p.date).push(p)}const xPositions=new Map();for(const group of sameDay.values()){const date=Date.parse(group[0].date+'T00:00:00Z');const center=first===last?312.5:35+555*(date-first)/(last-first);const step=Math.min(8,Math.max(0,2*Math.min(center-35,590-center))/Math.max(1,group.length-1));group.forEach((p,i)=>xPositions.set(p,center+(i-(group.length-1)/2)*step))}const xOf=p=>xPositions.get(p);const yOf=p=>110-(p.value-min)/span*90;const poly=document.createElementNS('http://www.w3.org/2000/svg','path');poly.classList.add('medical-curve');poly.setAttribute('d',medicalSmoothPath(points.map(p=>({x:xOf(p),y:yOf(p)}))));poly.setAttribute('fill','none');poly.setAttribute('stroke','#397b64');poly.setAttribute('stroke-width','2.5');poly.setAttribute('stroke-linecap','round');poly.setAttribute('stroke-linejoin','round');svg.append(poly);
 const labNames=[...new Set(points.map(p=>p.lab))];const markerShapes=['circle','square','triangle','diamond'];const markerFor=lab=>markerShapes[labNames.indexOf(lab)%markerShapes.length];for(const p of points){const shape=markerFor(p.lab),x=xOf(p),y=yOf(p);let dot;if(shape==='circle'){dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('cx',String(x));dot.setAttribute('cy',String(y));dot.setAttribute('r','4')}else{dot=document.createElementNS('http://www.w3.org/2000/svg','polygon');const vertices=shape==='square'?[[x-4,y-4],[x+4,y-4],[x+4,y+4],[x-4,y+4]]:shape==='triangle'?[[x,y-5],[x+5,y+4],[x-5,y+4]]:[[x,y-5],[x+5,y],[x,y+5],[x-5,y]];dot.setAttribute('points',vertices.map(pair=>pair.join(',')).join(' '))}dot.setAttribute('fill','#397b64');dot.setAttribute('stroke','#fff');dot.setAttribute('stroke-width','1');const tip=document.createElementNS('http://www.w3.org/2000/svg','title');tip.textContent=displayMedicalDate(p.date)+': '+p.value+' '+p.unit+' · '+p.lab;dot.append(tip);svg.append(dot)}
 
-text(panel,'small',points.map(p=>displayMedicalDate(p.date)+': '+p.value+' '+p.unit+' ('+p.lab+')').join(' · '));if(labNames.length>1)text(panel,'small','Лаборатории на общей линии: '+labNames.map(lab=>({'circle':'●','square':'■','triangle':'▲','diamond':'◆'})[markerFor(lab)]+' '+lab).join(' · '))}
+const markers=[...svg.querySelectorAll('circle,polygon')];attachMedicalChartTooltip(svg,points.map((point,index)=>({...point,x:xOf(point),y:yOf(point),node:markers[index]})));text(panel,'small',points.map(p=>displayMedicalDate(p.date)+': '+p.value+' '+p.unit+' ('+p.lab+')').join(' · '));if(labNames.length>1)text(panel,'small','Лаборатории на общей линии: '+labNames.map(lab=>({'circle':'●','square':'■','triangle':'▲','diamond':'◆'})[markerFor(lab)]+' '+lab).join(' · '))}
 if(!count)text(host,'p','Для графиков динамики нужны как минимум два результата одного показателя в сопоставимых единицах измерения.');
 }
 let cachedReports=[],cachedResults=[];
@@ -375,8 +472,9 @@ function renderHematologyCharts(reports,results,section='hematology'){
       const spacing=group.length>1?Math.min(7,18/(group.length-1)):0;
       group.forEach((point,index)=>coordinates.set(point,Math.max(left,Math.min(right,center+(index-(group.length-1)/2)*spacing))));
     }
-    const line=document.createElementNS(ns,'polyline');
-    line.setAttribute('points',plotted.map(point=>coordinates.get(point)+','+yOf(point.value)).join(' '));
+    const line=document.createElementNS(ns,'path');
+    line.classList.add('medical-curve');
+    line.setAttribute('d',medicalSmoothPath(plotted.map(point=>({x:coordinates.get(point),y:yOf(point.value)}))));
     line.setAttribute('stroke',color);line.setAttribute('stroke-width','3');line.setAttribute('fill','none');
     line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');svg.append(line);
     const detail=text(card,'div','Выбери точку на графике, чтобы увидеть дату, значение и лабораторию.','chart-point-detail');
@@ -401,7 +499,7 @@ function renderHematologyCharts(reports,results,section='hematology'){
       const show=()=>{detail.textContent=label};
       dot.addEventListener('click',show);dot.addEventListener('focus',show);
       dot.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();show()}});
-      svg.append(dot);
+      dot.classList.add('chart-point');svg.append(dot);
     }
     const tickDates=[...dateGroups.keys()];
     const axisDates=[tickDates[0]];
@@ -414,6 +512,8 @@ function renderHematologyCharts(reports,results,section='hematology'){
       chartAxisLabel(svg,xOfDate(date),252,date.slice(8,10)+'.'+date.slice(5,7),index===0?'start':index===axisDates.length-1?'end':'middle');
     }
     card.insertBefore(svg,detail);
+    const markers=[...svg.querySelectorAll('.chart-point')];
+    attachMedicalChartTooltip(svg,plotted.map((point,index)=>({...point,x:coordinates.get(point),y:yOf(point.value),node:markers[index]})),entry=>{detail.textContent=displayMedicalDate(entry.date)+' · '+entry.value+' '+entry.unit+' · '+entry.lab});
     text(card,'small',displayMedicalDate(plotted[0].date)+' — '+displayMedicalDate(latest.date)+' · '+plotted.length+' измерений');
     const legend=text(card,'div','','chart-lab-legend');
     for(const lab of new Set(plotted.map(point=>point.lab)))text(legend,'span',shapeLabels[shapeOf(lab)]+' '+lab,'chart-lab-item');
@@ -501,15 +601,17 @@ function drawMedicalLine(host,series,units){
     grid.setAttribute('stroke','#c9c5b8');grid.setAttribute('stroke-dasharray','4 5');svg.append(grid);
     chartAxisLabel(svg,left-10,y+6,Number(value.toPrecision(3)).toLocaleString('ru-RU'),'end');
   }
+  const tooltipEntries=[];
   for(const item of selected){
-    const line=document.createElementNS(ns,'polyline');
-    line.setAttribute('points',item.points.map(point=>xOf(point)+','+yOf(Number(point.value))).join(' '));
+    const line=document.createElementNS(ns,'path');line.classList.add('medical-curve');
+    line.setAttribute('d',medicalSmoothPath(item.points.map(point=>({x:xOf(point),y:yOf(Number(point.value))}))));
     line.setAttribute('fill','none');line.setAttribute('stroke',item.color);line.setAttribute('stroke-width','2.7');
     line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');svg.append(line);
     for(const point of item.points){
       const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',String(xOf(point)));dot.setAttribute('cy',String(yOf(Number(point.value))));
       dot.setAttribute('r','2.8');dot.setAttribute('fill',item.color);
       const tip=document.createElementNS(ns,'title');tip.textContent=displayMedicalDate(point.measured_at)+' · '+item.name+': '+point.value+' '+units;dot.append(tip);svg.append(dot);
+      tooltipEntries.push({date:point.measured_at,value:Number(point.value),unit:units,series:item.name,x:xOf(point),y:yOf(Number(point.value)),node:dot});
     }
   }
   const ordered=[...new Map(points.map(point=>[point.measured_at,point])).values()].sort((a,b)=>Date.parse(a.measured_at)-Date.parse(b.measured_at));
@@ -523,6 +625,7 @@ function drawMedicalLine(host,series,units){
     chartAxisLabel(svg,xOf(point),219,date,index===0?'start':index===axisPoints.length-1?'end':'middle');
   }
   host.append(svg);
+  attachMedicalChartTooltip(svg,tooltipEntries);
   const legend=text(host,'div','','vitals-legend');
   for(const item of selected){const latest=item.points[item.points.length-1];const label=text(legend,'span',item.name+': '+String(latest.value).replace('.',',')+' '+units);label.style.borderLeft='3px solid '+item.color}
   text(host,'small',displayMedicalDate(new Date(xmin).toISOString())+' — '+displayMedicalDate(new Date(xmax).toISOString()));
