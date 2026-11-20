@@ -17,7 +17,7 @@ test('Unauthenticated visitor sees login but no medical dashboard', async ({ pag
 test('All eight medical sections exist but stay private without a session', async ({ page }) => {
   await page.goto('http://127.0.0.1:8765/');
   const sections = [
-    'overviewSection','hormonesSection','hematologySection','chemistrySection',
+    'overview','hormonesSection','hematologySection','chemistrySection',
     'markersSection','protocolSection','bodySection','visitsSection'
   ];
   for (const id of sections) {
