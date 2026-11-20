@@ -33,3 +33,22 @@ jobs:
           node -e "const fs=require('node:fs');const vm=require('node:vm');const html=fs.readFileSync('index.html','utf8');const start=html.indexOf('<script>');const end=html.indexOf('</script>',start);if(start<0||end<0)throw Error('Inline dashboard script missing');new vm.Script(html.slice(start+8,end));console.log('Dashboard JavaScript syntax OK')"
       - name: Run medical data regression tests
         run: node --test tests/*.test.cjs
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out public application code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save @playwright/test@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run local dashboard in browser
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/medical-http.log 2>&1 &
+          npx playwright test tests/browser.spec.cjs --workers=1 --reporter=line
