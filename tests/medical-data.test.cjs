@@ -143,3 +143,42 @@ test('laboratory report date search accepts ISO and Russian calendar notation', 
   assert.deepEqual(leap, ['2024-02-29', '29.02.2024']);
   assert.deepEqual(Array.from(sandbox.labSearchDateTerms('2026-02-30')), ['2026-02-30']);
 });
+
+test('lab filtering preserves an initially expanded report', () => {
+  const row = {dataset:{name:'эстрадиол e2',abnormal:'false'},classList:{toggle(){}}};
+  const details = {open:true,dataset:{}};
+  const card = {
+    dataset:{reportSearch:'лаборатория тест 2026-11-20'},
+    classList:{toggle(){}},
+    querySelectorAll(){return [row]},
+    querySelector(selector){return selector==='details'?details:{textContent:''}}
+  };
+  const controls={labsFilter:{value:'эстрадиол'},onlyAbnormal:{checked:false},labsList:{children:[card]}};
+  sandbox.e=id=>controls[id];
+  sandbox.filterLabReports();
+  assert.equal(details.open,true);
+  assert.equal(details.dataset.preFilterOpen,'true');
+  controls.labsFilter.value='несуществующий показатель';
+  sandbox.filterLabReports();
+  assert.equal(details.open,false);
+  controls.labsFilter.value='';
+  sandbox.filterLabReports();
+  assert.equal(details.open,true,'original expanded state should be restored');
+  assert.equal(details.dataset.preFilterOpen,undefined);
+});
+
+test('filtering across a report and an analyte is order-independent', () => {
+  const row={dataset:{name:'тестостерон общий testo',abnormal:'false'},hidden:false,
+    classList:{toggle(name,on){if(name==='hidden')this.hidden=on},hidden:false}};
+  const card={dataset:{reportSearch:'северная лаборатория 2026-11-20'},hidden:false,
+    classList:{toggle(name,on){if(name==='hidden')this.hidden=on},hidden:false},
+    querySelectorAll(){return [row]},querySelector(){return null}};
+  const controls={labsFilter:{value:'ТЕСТОСТЕРОН   СЕВЕРНАЯ'},onlyAbnormal:{checked:false},labsList:{children:[card]}};
+  sandbox.e=id=>controls[id];
+  sandbox.filterLabReports();
+  assert.equal(row.classList.hidden,false);
+  assert.equal(card.classList.hidden,false);
+  controls.labsFilter.value='северная тестостерон';
+  sandbox.filterLabReports();
+  assert.equal(row.classList.hidden,false);
+});
