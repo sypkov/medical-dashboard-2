@@ -65,7 +65,23 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await page.locator('#login').click();
   await expect(page.locator('#overview')).toBeVisible();
   await expect(page.locator('#labsList')).toContainText('Глюкоза', { timeout: 15000 });
+  await page.locator('#labsList details').first().evaluate(el => { el.open = true; });
+  await expect(page.locator('#labsList .row').first()).toContainText('5.2');
   await page.locator('#accountLogout').click();
+  await expect(page.locator('#overview')).toBeHidden();
+  await expect(page.locator('#labsList')).toBeEmpty();
+});
+
+test('Failed authentication never reveals the medical dashboard', async ({ page }) => {
+  await page.route('https://*.supabase.co/**', route => route.fulfill({
+    status: 401, contentType: 'application/json',
+    body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid login credentials' })
+  }));
+  await page.goto('http://127.0.0.1:8765/');
+  await page.locator('#email').fill('invalid@example.invalid');
+  await page.locator('#password').fill('incorrect');
+  await page.locator('#login').click();
+  await expect(page.locator('#status')).toContainText('Ошибка входа');
   await expect(page.locator('#overview')).toBeHidden();
   await expect(page.locator('#labsList')).toBeEmpty();
 });
