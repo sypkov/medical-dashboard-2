@@ -84,6 +84,8 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await expect(basophils.last()).toContainText('0,5 %');
   await expect(page.locator('#hematologyOverview .lab-date-heading')).toHaveText(['10.01.2026','03.01.2026']);
   await expect(page.locator('#hormoneCharts svg')).toHaveCount(2);
+  await expect(page.locator('#hormoneCharts svg').first().locator('.chart-axis')).toHaveCount(6);
+  await expect(page.locator('#hormoneCharts polyline').first()).toHaveAttribute('stroke','#397b64');
   await expect(page.locator('#hematologyCharts svg')).toHaveCount(4);
   await expect(page.locator('#labTrends svg')).toHaveCount(1);
   await expect(page.locator('#labTrends')).toContainText('Базофилы %');
@@ -209,5 +211,20 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await expect(page.locator('#overview')).toBeHidden();
   for (const id of ['protocolOverview','bloodPressureChart','pulseChartNew','archiveContent','diarySyncStatus']) {
     await expect(page.locator('#'+id)).toBeEmpty();
+  }
+});
+
+
+test('Journal design uses the supplied warm palette and serif headings at both screen sizes', async ({ page }) => {
+  for(const width of [390,1280]){
+    await page.setViewportSize({width,height:900});
+    await page.goto('http://127.0.0.1:8765/');
+    await expect(page.locator('body')).toHaveCSS('background-color','rgb(242, 240, 231)');
+    await expect(page.locator('#loginCard')).toHaveCSS('background-color','rgb(252, 251, 246)');
+    await expect(page.locator('.header h1')).toHaveCSS('font-family',/Georgia/);
+    await expect(page.locator('.header h1')).toHaveText('Лабораторный журнал');
+    await expect(page.locator('#loginCard h2')).toHaveCSS('color','rgb(32, 33, 28)');
+    const fits=await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth);
+    expect(fits).toBe(true);
   }
 });
