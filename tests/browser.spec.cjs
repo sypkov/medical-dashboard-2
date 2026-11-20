@@ -141,6 +141,8 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
       ];
     } else if (url.pathname.endsWith('/md_sync_runs')) {
       body = [{status:'success',finished_at:'2026-01-10T08:00:00Z',started_at:'2026-01-10T07:59:00Z'}];
+    } else if (url.pathname.endsWith('/md_content_blocks') && url.searchParams.get('kind') === 'eq.medication_inventory') {
+      body=[{body:JSON.stringify({medication:'Омнадрен',mg_per_ampoule:100,ml_per_ampoule:1,receipts:[{date:'2026-01-01',ampoules:2,label:'Начальный запас'},{date:'2026-01-07',ampoules:3,label:'Закупка'}]})}];
     } else if (url.pathname.endsWith('/md_content_blocks') &&
                url.searchParams.get('kind') === 'eq.source_archive') {
       body = [{title:'Синтетическая архивная запись',body:'Контрольный текст архива'}];
@@ -157,9 +159,10 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   const omnadren = page.getByRole('table',{name:'Омнадрен — история инъекций'});
   await expect(omnadren.locator('tbody tr')).toHaveCount(2);
   await expect(page.locator('.protocol-dose-total')).toHaveText('Всего введено: 225 мг');
-  await expect(omnadren.locator('.protocol-cumulative')).toHaveText(['Накоплено: 225 мг','Накоплено: 125 мг']);
+  await expect(omnadren.locator('.protocol-cumulative')).toHaveText(['Накоплено: 225 мгОстаток: 275 мг · 2,75 ампулы в эквиваленте','Накоплено: 125 мгОстаток: 75 мг · 0,75 ампулы в эквиваленте']);
   await expect(page.getByRole('table',{name:'ХГЧ — история инъекций'})).not.toContainText('Омнадрен');
   await expect(page.getByRole('table',{name:'Тирзепатид — история инъекций'})).not.toContainText('ХГЧ');
+  await expect(page.locator('.protocol-stock-balance')).toHaveText('Расчётный остаток: 275 мг · 2,75 ампулы в эквиваленте');
   const row = omnadren.locator('tbody tr').first();
   await expect(row).toHaveCSS('display','grid');
   await expect(row.locator('td').first()).toHaveText('10.01.2026');
