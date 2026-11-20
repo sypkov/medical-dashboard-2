@@ -53,13 +53,15 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
     if (url.includes('/rest/v1/md_lab_reports')) return route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify([{ id: fakeReport, lab_name: 'Тестовая лаборатория',
-        sample_date: '2026-01-10', report_date: '2026-01-10' }])
+        sample_date: '2026-01-10', report_date: '2026-01-10' }, { id:'33333333-3333-4333-8333-333333333333',lab_name:'Тестовая лаборатория',sample_date:'2026-01-03',report_date:'2026-01-03'}])
     });
     if (url.includes('/rest/v1/md_lab_results')) return route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify([{ report_id: fakeReport, analyte_code: 'test_glucose',
         analyte_name: 'Глюкоза', numeric_value: 5.2, unit: 'ммоль/л',
-        ref_low: 4.1, ref_high: 6.1, text_value: null, reference_text: null, flag: null }])
+        ref_low: 4.1, ref_high: 6.1, text_value: null, reference_text: null, flag: null },
+        {report_id:fakeReport,analyte_code:'baso_pct',analyte_name:'Базофилы %',numeric_value:0.8,unit:'%',ref_low:0,ref_high:0.7},
+        {report_id:'33333333-3333-4333-8333-333333333333',analyte_code:'baso_pct',analyte_name:'Базофилы %',numeric_value:0.5,unit:'%',ref_low:0,ref_high:0.7}])
     });
     return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
   });
@@ -71,13 +73,18 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await expect(page.locator('#labsList')).toContainText('Глюкоза', { timeout: 15000 });
   await page.locator('#labsList details').first().evaluate(el => { el.open = true; });
   await expect(page.locator('#labsList .row').first()).toContainText('5.2');
+  const basophils = page.locator('#hematologyOverview .data-row').filter({hasText:'Базофилы %'});
+  await expect(basophils).toHaveCount(2);
+  await expect(basophils.first()).toContainText('0,8 %');
+  await expect(basophils.last()).toContainText('0,5 %');
+  await expect(page.locator('#hematologyOverview .lab-date-heading')).toHaveText(['10.01.2026','03.01.2026']);
   await page.locator('#labsFilter').fill('10.01.2026 ГЛЮКОЗА');
   await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
   await page.locator('#labsFilter').fill('несуществующий показатель');
   await expect(page.locator('#labsList .lab-report').first()).toHaveClass(/hidden/);
   await page.locator('#labsFilter').fill('');
   await page.locator('#onlyAbnormal').check();
-  await expect(page.locator('#labsList .lab-report').first()).toHaveClass(/hidden/);
+  await expect(page.locator('#labsList .row').first()).toHaveClass(/hidden/);
   await page.locator('#onlyAbnormal').uncheck();
   await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
   await page.locator('#sourceArchive summary').first().click();
