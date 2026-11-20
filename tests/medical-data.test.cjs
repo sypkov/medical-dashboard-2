@@ -285,3 +285,25 @@ test('laboratory search uses both sample date and report date', () => {
   assert.equal(row.classList.hidden,true);
 });
 
+
+
+test('smooth curves pass through measured points without exceeding adjacent values',()=>{
+  const state=vm.createContext({});vm.runInContext(extractFunction('medicalSmoothPath'),state);
+  const points=[{x:0,y:12},{x:8,y:3},{x:21,y:9},{x:30,y:9},{x:100,y:1}];
+  const path=state.medicalSmoothPath(points);
+  assert.ok(path.startsWith('M 0 12'));
+  const segments=[...path.matchAll(/C ([^CML]+)/g)].map(match=>match[1].trim().split(/\s+/).map(Number));
+  assert.equal(segments.length,points.length-1);
+  for(let index=0;index<segments.length;index++){
+    const [x1,y1,x2,y2,x,y]=segments[index],from=points[index],to=points[index+1];
+    assert.equal(x,to.x);assert.equal(y,to.y);
+    for(let step=0;step<=100;step++){
+      const t=step/100,u=1-t;
+      const value=u*u*u*from.y+3*u*u*t*y1+3*u*t*t*y2+t*t*t*to.y;
+      assert.ok(value>=Math.min(from.y,to.y)-1e-9&&value<=Math.max(from.y,to.y)+1e-9);
+    }
+  }
+  assert.equal(state.medicalSmoothPath([]),'');
+  assert.equal(state.medicalSmoothPath([{x:0,y:0}]),'M 0 0');
+  assert.ok(!/NaN|Infinity/.test(state.medicalSmoothPath([{x:0,y:1},{x:0,y:2},{x:1,y:3}])));
+});
