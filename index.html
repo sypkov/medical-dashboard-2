@@ -87,7 +87,13 @@ body{background:#f4f3ee}.header{padding:20px 24px}.header h1{font-size:20px;font
   .protocol-history-table td:nth-child(2){font-weight:600}
   .protocol-history-table td:nth-child(4){grid-column:1/-1;margin-top:4px;line-height:1.5;overflow-wrap:anywhere}
 }
-</style><style>#overview .reference-panel .lab-date-heading{grid-column:1/-1;margin:14px 0 2px;padding:0 0 8px;border-bottom:1px solid #d3d1c7;color:#3c3489;font-size:16px;font-weight:700}#overview .reference-panel .lab-date-heading:first-child{margin-top:0}</style></head><body><header class="header"><div><h1>Медицинский дашборд</h1><p>Персональный обзор здоровья · защищённый доступ</p></div><img src="./shield.svg" alt=""></header><main><section class="card hidden" id="accountBar"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong>Мой медицинский дашборд</strong><small id="accountName" style="display:block">Аккаунт авторизован</small></div><button id="accountLogout" type="button">Выйти</button></div></section><section class="card" id="loginCard"><h2>01 / Вход</h2><p id="auth">Не авторизован</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Пароль<input id="password" type="password" autocomplete="current-password"></label><button id="login">Войти</button><button id="logout" disabled>Выйти</button></section><section class="card" id="recoveryCard"><h2>Восстановление доступа</h2><p>Запроси письмо для смены пароля. Если Supabase сообщает о лимите писем, дождись его сброса.</p><label>Email для восстановления<input id="recoveryEmail" type="email" autocomplete="email"></label><button id="requestRecovery">Отправить письмо</button><div id="newPasswordPanel" class="hidden"><p>Ссылка восстановления подтверждена. Установи новый пароль.</p><label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="12"></label><label>Повтори пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="12"></label><button id="savePassword">Сохранить новый пароль</button></div></section><section class="hidden" id="overview">
+</style><style>#overview .reference-panel .lab-date-heading{grid-column:1/-1;margin:14px 0 2px;padding:0 0 8px;border-bottom:1px solid #d3d1c7;color:#3c3489;font-size:16px;font-weight:700}#overview .reference-panel .lab-date-heading:first-child{margin-top:0}</style><style>
+.protocol-medication{margin:0 0 24px}
+.protocol-dose-total{font-weight:700;font-size:16px;color:#3c3489;margin:8px 0}
+.protocol-dose-breakdown{font-size:13px;color:#666;margin:4px 0}
+.protocol-medication .protocol-table-wrap{margin-top:12px}
+@media(max-width:700px){.protocol-history-table .protocol-cumulative{grid-column:1/-1;color:#3c3489;font-weight:600}}
+</style></head><body><header class="header"><div><h1>Медицинский дашборд</h1><p>Персональный обзор здоровья · защищённый доступ</p></div><img src="./shield.svg" alt=""></header><main><section class="card hidden" id="accountBar"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong>Мой медицинский дашборд</strong><small id="accountName" style="display:block">Аккаунт авторизован</small></div><button id="accountLogout" type="button">Выйти</button></div></section><section class="card" id="loginCard"><h2>01 / Вход</h2><p id="auth">Не авторизован</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Пароль<input id="password" type="password" autocomplete="current-password"></label><button id="login">Войти</button><button id="logout" disabled>Выйти</button></section><section class="card" id="recoveryCard"><h2>Восстановление доступа</h2><p>Запроси письмо для смены пароля. Если Supabase сообщает о лимите писем, дождись его сброса.</p><label>Email для восстановления<input id="recoveryEmail" type="email" autocomplete="email"></label><button id="requestRecovery">Отправить письмо</button><div id="newPasswordPanel" class="hidden"><p>Ссылка восстановления подтверждена. Установи новый пароль.</p><label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="12"></label><label>Повтори пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="12"></label><button id="savePassword">Сохранить новый пароль</button></div></section><section class="hidden" id="overview">
 <nav class="reference-nav" aria-label="Разделы"><a class="active" href="#overview">Обзор</a><a href="#hormonesSection">Гормоны</a><a href="#hematologySection">Гематология</a><a href="#chemistrySection">Биохимия</a><a href="#markersSection">Маркеры</a><a href="#protocolSection">Протокол</a><a href="#bodySection">Состав тела и давление</a><a href="#visitsSection">Врачи</a><a href="#labsCard">Все анализы</a><a href="#importCard">Импорт</a></nav>
 <div class="reference-sticky"><div class="reference-sticky-grid" id="overviewMetrics"></div></div>
 <div class="section-controls"><button type="button" id="expandDashboardSections">Развернуть всё</button><button type="button" id="collapseDashboardSections">Свернуть всё</button></div>
@@ -238,6 +244,66 @@ let consultationHistory=[];function renderConsultations(){const host=e('visitsOv
 async function loadConsultations(serial=labsRequestSerial){const epoch=privateViewEpoch;if(!signed||serial!==labsRequestSerial)return;const host=e('visitsOverview');if(!host)return;host.replaceChildren();try{const rows=await labReadPages('md_content_blocks?select=title,body,kind&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.consultation_history&order=title.asc,id.asc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;consultationHistory=rows;renderConsultations()}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial){consultationHistory=[];host.replaceChildren();text(host,'div','Не удалось загрузить консультации: '+(err.message||String(err)),'reference-empty')}}}
 e('visitsSearch').addEventListener('input',renderConsultations);e('visitsExpand').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=true));e('visitsCollapse').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=false));
 
+function renderProtocolTables(host,rows){
+  const groups=new Map(['Омнадрен','ХГЧ','Тирзепатид'].map(name=>[name,[]]));
+  for(const row of rows){
+    const name=String(row.medication||'Препарат').trim();
+    const canonical=[...groups.keys()].find(key=>key.toLocaleLowerCase('ru')===name.toLocaleLowerCase('ru'))||name;
+    if(!groups.has(canonical))groups.set(canonical,[]);
+    groups.get(canonical).push(row);
+  }
+  const format=value=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:3}).format(value);
+  for(const [name,events] of groups){
+    const section=text(host,'section','','protocol-medication');
+    text(section,'h3',name+' · '+events.length+' инъекций');
+    if(!events.length){text(section,'p','Записей пока нет.');continue}
+    const ordered=[...events].sort((a,b)=>String(a.event_at||'').localeCompare(String(b.event_at||'')));
+    const cumulative=new Map();
+    const doses=new Map();
+    let total=0;
+    let missing=0;
+    const omnadren=name==='Омнадрен';
+    if(omnadren){
+      for(const event of ordered){
+        const valid=event.dose!==null&&event.dose!==undefined&&String(event.dose).trim()!==''&&Number.isFinite(Number(event.dose))&&Number(event.dose)>=0&&String(event.dose_unit||'').trim().toLowerCase()==='мг';
+        if(valid){
+          const dose=Number(event.dose);
+          total+=dose;
+          doses.set(dose,(doses.get(dose)||0)+1);
+        }else missing++;
+        cumulative.set(event,{total,missing});
+      }
+      text(section,'p',(missing?'Подтверждённая сумма доз: ':'Всего введено: ')+format(total)+' мг','protocol-dose-total');
+      for(const [dose,count] of [...doses].sort((a,b)=>b[0]-a[0])){
+        text(section,'div',format(dose)+' мг × '+count+' = '+format(dose*count)+' мг','protocol-dose-breakdown');
+      }
+      if(missing)text(section,'p','Не включено в сумму записей с неподтверждённой дозой в мг: '+missing);
+    }
+    const wrap=text(section,'div','','protocol-table-wrap');
+    const table=document.createElement('table');
+    table.className='protocol-history-table';
+    table.setAttribute('aria-label',name+' — история инъекций');
+    wrap.append(table);
+    const head=document.createElement('thead');table.append(head);
+    const header=text(head,'tr','');
+    const labels=['Дата','Препарат','Доза','Примечание'];
+    if(omnadren)labels.push('Накопительная доза');
+    for(const label of labels)text(header,'th',label);
+    const body=document.createElement('tbody');table.append(body);
+    for(const event of [...ordered].reverse()){
+      const row=text(body,'tr','');
+      text(row,'td',displayMedicalDate(String(event.event_at||'').slice(0,10)));
+      text(row,'td',event.medication||name);
+      text(row,'td',[event.dose,event.dose_unit].filter(value=>value!==null&&value!==undefined&&value!=='').join(' ')||'—');
+      renderProtocolNote(text(row,'td',''),event.note);
+      if(omnadren){
+        const value=cumulative.get(event);
+        text(row,'td','Накоплено: '+format(value.total)+' мг'+(value.missing?' · неполный итог':''),'protocol-cumulative');
+      }
+    }
+  }
+}
+
 function renderProtocolNote(cell,note){
   const original=String(note||'').trim();
   const shortened=original
@@ -275,7 +341,7 @@ async function loadSupplemental(serial=labsRequestSerial){const epoch=privateVie
 const groups=[
 {id:'protocolOverview',table:'md_therapy_events',select:'event_at,medication,dose,dose_unit,note',date:'event_at',render:(row,item)=>{text(item,'span',row.medication||'Препарат','card-label');text(item,'strong',[row.dose,row.dose_unit].filter(x=>x!==null&&x!==undefined&&x!=='').join(' ')||'Доза не указана');if(row.note)text(item,'span',row.note,'ref')}},
 {id:'bodyOverview',table:'md_diary_entries',select:'measured_at,metric,value,unit',date:'measured_at',render:(row,item)=>{text(item,'span',row.metric||'Измерение','card-label');text(item,'strong',[row.value,row.unit].filter(x=>x!==null&&x!==undefined&&x!=='').join(' '))}}];
-await Promise.all(groups.map(async group=>{const host=e(group.id);if(!host)return;host.replaceChildren();try{const rows=await labReadPages(group.table+'?select='+group.select+'&patient_id=eq.'+encodeURIComponent(PATIENT)+'&order='+group.date+'.desc,id.desc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;if(!rows.length){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([])}else{therapyTimeline=[];renderTherapyTimeline()}text(host,'div',group.id==='protocolOverview'?'Назначения пока не добавлены в защищённую базу.':'Измерения пока не добавлены в защищённую базу.','reference-empty');if(group.id==='protocolOverview')loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});return}if(group.id==='bodyOverview'){bodyHistory=rows;renderBodyHistory(rows);return}if(group.id==='protocolOverview'){therapyTimeline=rows;renderTherapyTimeline();loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});const title=text(host,'div','История выполненных инъекций · '+rows.length+' записей','protocol-history-title');const legend=text(host,'div','','protocol-legend');const counts=new Map();for(const x of rows)counts.set(x.medication||'Препарат',(counts.get(x.medication||'Препарат')||0)+1);for(const [name,count] of counts)text(legend,'span',name+' · '+count);const wrap=text(host,'div','','protocol-table-wrap');const table=document.createElement('table');table.className='protocol-history-table';wrap.append(table);const thead=document.createElement('thead');table.append(thead);const head=document.createElement('tr');thead.append(head);for(const label of ['Дата','Препарат','Доза','Примечание'])text(head,'th',label);const tbody=document.createElement('tbody');table.append(tbody);for(const x of rows){const tr=document.createElement('tr');tbody.append(tr);text(tr,'td',displayMedicalDate(String(x.event_at||'').slice(0,10)));text(tr,'td',x.medication||'—');text(tr,'td',[x.dose,x.dose_unit].filter(v=>v!=null&&v!=='').join(' ')||'—');renderProtocolNote(text(tr,'td',''),x.note)}return}
+await Promise.all(groups.map(async group=>{const host=e(group.id);if(!host)return;host.replaceChildren();try{const rows=await labReadPages(group.table+'?select='+group.select+'&patient_id=eq.'+encodeURIComponent(PATIENT)+'&order='+group.date+'.desc,id.desc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;if(!rows.length){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([])}else{therapyTimeline=[];renderTherapyTimeline()}text(host,'div',group.id==='protocolOverview'?'Назначения пока не добавлены в защищённую базу.':'Измерения пока не добавлены в защищённую базу.','reference-empty');if(group.id==='protocolOverview')loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});return}if(group.id==='bodyOverview'){bodyHistory=rows;renderBodyHistory(rows);return}if(group.id==='protocolOverview'){therapyTimeline=rows;renderTherapyTimeline();loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});renderProtocolTables(host,rows);return}
 
 for(const row of rows){const item=text(host,'div','','data-row');group.render(row,item);text(item,'span',String(row[group.date]||'').slice(0,10),'date')}}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([]);host.replaceChildren()}else{therapyTimeline=[];renderTherapyTimeline();host.replaceChildren();e('protocolNotes').replaceChildren()}text(host,'div','Не удалось загрузить данные: '+(err.message||String(err)),'reference-empty')}}}))
 }
