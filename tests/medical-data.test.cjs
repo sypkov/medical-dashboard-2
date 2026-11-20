@@ -218,3 +218,22 @@ test('laboratory report search combines Russian dates with analyte names', () =>
   assert.equal(row.classList.hidden,true);
   assert.equal(card.classList.hidden,true);
 });
+
+test('laboratory search uses both sample date and report date', () => {
+  const sample=sandbox.labSearchDateTerms('2026-11-18');
+  const issued=sandbox.labSearchDateTerms('2026-11-20');
+  const reportSearch=['медицинская лаборатория',...sample,...issued].join(' ');
+  const row={dataset:{name:'тромбоциты plt',abnormal:'false'},classList:{hidden:false,toggle(name,on){if(name==='hidden')this.hidden=on}}};
+  const card={dataset:{reportSearch},classList:{hidden:false,toggle(name,on){if(name==='hidden')this.hidden=on}},
+    querySelectorAll(){return [row]},querySelector(){return null}};
+  const controls={labsFilter:{value:'18.11.2026 тромбоциты'},onlyAbnormal:{checked:false},labsList:{children:[card]}};
+  sandbox.e=id=>controls[id];
+  sandbox.filterLabReports();
+  assert.equal(row.classList.hidden,false);
+  controls.labsFilter.value='20.11.2026 тромбоциты';
+  sandbox.filterLabReports();
+  assert.equal(row.classList.hidden,false);
+  controls.labsFilter.value='19.11.2026 тромбоциты';
+  sandbox.filterLabReports();
+  assert.equal(row.classList.hidden,true);
+});
