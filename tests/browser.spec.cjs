@@ -61,7 +61,10 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
         analyte_name: 'Глюкоза', numeric_value: 5.2, unit: 'ммоль/л',
         ref_low: 4.1, ref_high: 6.1, text_value: null, reference_text: null, flag: null },
         {report_id:fakeReport,analyte_code:'baso_pct',analyte_name:'Базофилы %',numeric_value:0.8,unit:'%',ref_low:0,ref_high:0.7},
-        {report_id:'33333333-3333-4333-8333-333333333333',analyte_code:'baso_pct',analyte_name:'Базофилы %',numeric_value:0.5,unit:'%',ref_low:0,ref_high:0.7}, {report_id:'44444444-4444-4444-8444-444444444444',analyte_code:'synthetic_archive',analyte_name:'Синтетический архивный показатель',numeric_value:2,unit:'условные единицы'}])
+        {report_id:'33333333-3333-4333-8333-333333333333',analyte_code:'baso_pct',analyte_name:'Базофилы %',numeric_value:0.5,unit:'%',ref_low:0,ref_high:0.7}, ...['Тестостерон общий','Эстрадиол (E2)','Гематокрит','Гемоглобин','Эритроциты','Тромбоциты'].flatMap((name,index)=>[
+          {report_id:fakeReport,analyte_code:'chart_'+index,analyte_name:name,numeric_value:20+index,unit:['нмоль/л','пмоль/л','%','г/л','×10¹²/л','×10⁹/л'][index]},
+          {report_id:'33333333-3333-4333-8333-333333333333',analyte_code:'chart_'+index,analyte_name:name,numeric_value:19+index,unit:['нмоль/л','пмоль/л','%','г/л','×10¹²/л','×10⁹/л'][index]}
+        ]), {report_id:'44444444-4444-4444-8444-444444444444',analyte_code:'synthetic_archive',analyte_name:'Синтетический архивный показатель',numeric_value:2,unit:'условные единицы'}])
     });
     return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
   });
@@ -80,6 +83,13 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await expect(basophils.first()).toContainText('0,8 %');
   await expect(basophils.last()).toContainText('0,5 %');
   await expect(page.locator('#hematologyOverview .lab-date-heading')).toHaveText(['10.01.2026','03.01.2026']);
+  await expect(page.locator('#hormoneCharts svg')).toHaveCount(2);
+  await expect(page.locator('#hematologyCharts svg')).toHaveCount(4);
+  await expect(page.locator('#labTrends svg')).toHaveCount(1);
+  await expect(page.locator('#labTrends')).toContainText('Базофилы %');
+  for(const name of ['Тестостерон общий','Эстрадиол','Гематокрит','Гемоглобин','Эритроциты','Тромбоциты']){
+    await expect(page.locator('#labTrends')).not.toContainText(name);
+  }
   await page.locator('#labsFilter').fill('10.01.2026 ГЛЮКОЗА');
   await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
   await page.locator('#labsFilter').fill('несуществующий показатель');
