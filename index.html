@@ -77,9 +77,6 @@ body{background:#f4f3ee}.header{padding:20px 24px}.header h1{font-size:20px;font
 #overview .reference-section-charts[hidden],#overview .body-vitals[hidden],#overview .protocol-notes[hidden]{display:none!important}
 </style><style>.reference-empty{padding:18px;background:#fff;border:1px solid #d3d1c7;border-radius:9px;color:#777;line-height:1.6}#labsFilter{max-width:420px}#labsCard .check{margin:10px 0}#overview .reference-panel .reference-empty{grid-column:1/-1}</style><style>.body-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}.body-toolbar button{background:#fff;color:#534ab7;border:1px solid #d3d1c7;padding:8px 13px;font-size:12px;margin:0}.body-toolbar button.active{background:#534ab7;color:white;border-color:#534ab7}#bodyOverview .sparkline{display:block;width:100%;height:46px;margin:5px 0}.body-delta{font-size:12px;color:#555}</style><style>.body-vitals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body-vitals-card{margin:12px 0}.body-vitals-plot p{font-size:13px}.body-big-chart{display:block;width:100%;height:175px}.vitals-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}.vitals-legend span{font-size:12px;padding-left:8px}@media(max-width:700px){.body-vitals{grid-template-columns:1fr}}</style><style>#protocolOverview{display:block!important}.protocol-history-title{font-weight:650;color:#3c3489;margin:0 0 12px}.protocol-table-wrap{overflow-x:auto;border:1px solid #dedbd2;border-radius:9px;background:white}.protocol-history-table{width:100%;border-collapse:collapse;font-size:12px}.protocol-history-table th{text-align:left;color:#534ab7;background:#f5f4f0}.protocol-history-table td,.protocol-history-table th{padding:10px 12px;border-bottom:1px solid #eceae3;vertical-align:top}.protocol-history-table tr:last-child td{border-bottom:0}.protocol-history-table td:nth-child(3){font-weight:700;white-space:nowrap}</style><style>.protocol-legend{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.protocol-legend span{background:#f0eff9;color:#3c3489;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600}</style><style>.protocol-notes{margin:16px 0 22px}.protocol-notes h3{font-size:16px;color:#3c3489;margin-bottom:10px}.protocol-note{background:#fff;border:1px solid #dcd9d1;border-radius:8px;margin:7px 0;padding:10px 13px}.protocol-note summary{cursor:pointer;font-weight:600;color:#3c3489}.protocol-note p{white-space:pre-wrap;line-height:1.65;margin-top:10px;font-size:13px}</style><style>.visits-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}.visits-tools label{font-size:12px;font-weight:600;color:#3c3489}.visits-tools input{flex:1 1 230px;min-width:160px;border:1px solid #d3d1c7;border-radius:8px;padding:9px 11px;background:white}.visits-tools button{border:1px solid #534ab7;background:white;color:#534ab7;border-radius:8px;padding:9px 11px;cursor:pointer;font-size:12px}.visits-tools button:hover{background:#f0eff9}</style><style>.reference-section-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 24px}.hematology-chart-card{background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:14px}.hematology-chart-card h3{font-size:14px;color:#3c3489;margin:0 0 6px}.hematology-chart-card strong{display:block;font-size:19px}.hematology-line-chart{width:100%;height:145px;display:block;margin:9px 0}.hematology-chart-card small{font-size:11px;color:#777}@media(max-width:700px){.reference-section-charts{grid-template-columns:1fr}}</style><style>
 .protocol-history-table td:first-child{white-space:nowrap}
-.protocol-source{margin-top:6px;font-size:12px;color:#666}
-.protocol-source summary{cursor:pointer}
-.protocol-source p{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:700px){
   .protocol-history-table,.protocol-history-table tbody{display:block}
   .protocol-history-table thead{display:none}
@@ -248,13 +245,6 @@ function renderProtocolNote(cell,note){
     .replace(/(?:^| · )Источник: Google Sheets GZT; точное время не указано\.$/,'')
     .trim();
   text(cell,'span',shortened||'Выполнено');
-  if(original&&original!==shortened){
-    const details=document.createElement('details');
-    details.className='protocol-source';
-    cell.append(details);
-    text(details,'summary','Источник');
-    text(details,'p',original);
-  }
 }
 
 
