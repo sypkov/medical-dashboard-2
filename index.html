@@ -120,18 +120,18 @@ const host=e('overviewMetrics');host.replaceChildren();const dated=new Map(repor
 const metrics=[{title:'Гематокрит',match:n=>n.includes('гематокрит')},{title:'Тестостерон',match:n=>n.includes('тестостерон общий')},{title:'Эстрадиол',match:n=>n.includes('эстрадиол')},{title:'Тромбоциты',match:n=>n==='тромбоциты'||n.startsWith('тромбоциты (')}];
 const attention=[],normal=[];
 for(const m of metrics){
-const points=results.filter(r=>r.numeric_value!==null&&dated.has(r.report_id)&&m.match((r.analyte_name||'').toLowerCase())).map(r=>({...r,date:dated.get(r.report_id),num:Number(r.numeric_value)})).filter(r=>Number.isFinite(r.num)).sort((a,b)=>a.date.localeCompare(b.date));
+const points=results.filter(r=>r.numeric_value!==null&&dated.has(r.report_id)&&m.match((r.analyte_name||'').toLowerCase())).map(r=>{const normalized=trendMedicalValue(r);return {...r,date:dated.get(r.report_id),num:normalized.value,displayUnit:normalized.unit}}).filter(r=>Number.isFinite(r.num)).sort((a,b)=>a.date.localeCompare(b.date));
 const item=text(host,'div','','metric');text(item,'small',m.title);
 if(!points.length){item.classList.add('empty');text(item,'b','—');text(item,'small','Нет данных');continue}
-const x=points[points.length-1];const low=x.ref_low==null?null:Number(x.ref_low),high=x.ref_high==null?null:Number(x.ref_high);
+const x=points[points.length-1];const comparable=points.filter(p=>p.displayUnit===x.displayUnit);const factor=m.title==='Тестостерон'||m.title==='Эстрадиол'?1:(String(x.unit||'').trim().toLowerCase()==='г/дл'&&m.title==='Гемоглобин'?10:1);const low=x.ref_low==null?null:Number(x.ref_low)*factor,high=x.ref_high==null?null:Number(x.ref_high)*factor;
 const outside=(low!==null&&x.num<low)||(high!==null&&x.num>high);
 if(outside)item.classList.add('warn');
-text(item,'b',String(x.numeric_value).replace('.',',')+(x.unit==='%'?'%':''));
+text(item,'b',String(x.num).replace('.',',')+(x.displayUnit==='%'?'%':''));
 const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 160 34');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика: '+m.title);item.append(svg);
-if(points.length>1){const vals=points.map(p=>p.num),min=Math.min(...vals),max=Math.max(...vals),span=max-min||1;const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');line.setAttribute('points',points.map((p,i)=>(4+i*152/(points.length-1))+','+(29-(p.num-min)/span*24)).join(' '));line.setAttribute('fill','none');line.setAttribute('stroke','currentColor');line.setAttribute('stroke-width','2.4');line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');svg.append(line)}
-text(item,'small',(x.unit==='%'?'':x.unit+' · ')+x.date,'metric-date');
-const ref=(low===null&&high===null)?'референс не указан':(low===null?'до '+high:high===null?'от '+low:low+'–'+high)+(x.unit?' '+x.unit:'');
-text(item,'small',ref);
+if(comparable.length>1){const vals=comparable.map(p=>p.num),min=Math.min(...vals),max=Math.max(...vals),span=max-min||1;const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');line.setAttribute('points',comparable.map((p,i)=>(4+i*152/(comparable.length-1))+','+(29-(p.num-min)/span*24)).join(' '));line.setAttribute('fill','none');line.setAttribute('stroke','currentColor');line.setAttribute('stroke-width','2.4');line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');svg.append(line)}
+text(item,'small',(x.displayUnit==='%'?'':x.displayUnit+' · ')+x.date,'metric-date');
+const ref=(low===null&&high===null)?'референс не указан':(low===null?'до '+high:high===null?'от '+low:low+'–'+high)+(x.displayUnit?' '+x.displayUnit:'');
+text(item,'small',ref);if(comparable.length<points.length)text(item,'small','Динамика: результаты с другими единицами исключены.');
 const line=m.title+': '+String(x.numeric_value).replace('.',',')+' '+(x.unit||'')+' ('+x.date+'; '+ref+')';
 if(outside)attention.push(line);else if(low!==null||high!==null)normal.push(line);
 }
