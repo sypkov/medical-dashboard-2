@@ -46,6 +46,10 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
         refresh_token: 'synthetic-refresh', user: { id: 'synthetic-user' }
       }) });
     }
+    if (url.includes('/rest/v1/md_memberships')) return route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify([{ patient_id: '22222222-2222-4222-8222-222222222222', role: 'owner' }])
+    });
     if (url.includes('/rest/v1/md_lab_reports')) return route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify([{ id: fakeReport, lab_name: 'Тестовая лаборатория',
