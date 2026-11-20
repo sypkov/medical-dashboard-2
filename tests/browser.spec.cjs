@@ -156,8 +156,8 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await expect(row.locator('td').nth(3).locator('span')).toHaveText('Выполнено');
   await expect(page.locator('.reference-sticky')).toHaveCSS('position','static');
   await expect(page.locator('.reference-sticky')).not.toBeInViewport();
-  await row.locator('.protocol-source summary').click();
-  await expect(row.locator('.protocol-source p')).toContainText('Google Sheets GZT');
+  await expect(row.locator('details')).toHaveCount(0);
+  await expect(row).not.toContainText('Google Sheets');
   await page.getByRole('link',{name:'Состав тела и давление',exact:true}).click();
   await expect(page.locator('#bloodPressureChart svg')).toBeVisible();
   await expect(page.locator('#diarySyncStatus')).toContainText('10.01.2026');
