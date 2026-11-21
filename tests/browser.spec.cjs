@@ -13,7 +13,7 @@ test('Chemistry tables retain all measurements and text blocks are available', a
     else if(url.includes('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222',role:'owner'}];
     else if(url.includes('/md_lab_reports'))body=dates.map((date,i)=>({id:ids[i],sample_date:date,report_date:date,lab_name:'Тестовая лаборатория'}));
     else if(url.includes('/md_lab_results'))body=dates.map((_,i)=>({report_id:ids[i],analyte_name:'Глюкоза',numeric_value:[5,5.8,6.2,6.1][i],unit:'ммоль/л',...(i===3?{ref_low:4,ref_high:6}:{reference_text:'Исторический дашборд; референсы из старого HTML'})}));
-    else if(url.includes('/md_content_blocks')&&url.includes('kind=in.'))body=[{kind:'interpretation',title:'Интерпретация тестового анализа',body:'Полный текст интерпретации.'},{kind:'source_archive',title:'Историческая запись',body:'Полный текст исторического блока.'}];
+    else if(url.includes('/md_content_blocks')&&url.includes('kind=in.'))body=[{kind:'interpretation',title:'Интерпретация тестового анализа',body:'Мочевина: полный текст интерпретации.'},...[['chemistry','Пояснение биохимии','Полный текст исторического блока.'],['hormones','Пояснение гормонов','Динамика гормонов.'],['hematology','Пояснение гематологии','Динамика гематокрита.'],['protocol','Пояснение протокола','История дозировки.']].map(([section,title,text])=>({kind:'section_note',title,body:JSON.stringify({section,title,tone:'note',as_of:'2026-01-01',paragraphs:[[{text,bold:true}]]})}))];
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto('http://127.0.0.1:8765/');await page.locator('#email').fill('chemistry@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
@@ -25,9 +25,16 @@ test('Chemistry tables retain all measurements and text blocks are available', a
   await expect(page.locator('#chemistryOverview .data-row')).toHaveCount(0);
   const history=page.locator('.chemistry-history');await expect(history).not.toHaveAttribute('open');await history.locator('summary').click();
   await expect(page.getByRole('table',{name:'Биохимия — полная хронология',exact:true}).locator('tbody tr')).toHaveCount(4);
-  await expect(page.locator('#medicalTextBlocks')).toContainText('Полный текст интерпретации.');
-  await page.locator('#medicalTextBlocks summary').click();await expect(page.locator('#medicalTextBlocks')).toContainText('Полный текст исторического блока.');
-  await page.locator('#journalMenuButton').click();await page.locator('#accountLogout').click();await expect(page.locator('#medicalTextBlocks')).toBeEmpty();
+  await expect(page.locator('#chemistrySectionNotes')).toContainText('полный текст интерпретации.');
+  await expect(page.locator('#chemistrySectionNotes')).toContainText('Полный текст исторического блока.');
+  await expect(page.locator('#chemistrySectionNotes strong')).toHaveText('Полный текст исторического блока.');
+  await expect(page.locator('#hormonesSectionNotes')).toContainText('Динамика гормонов.');
+  await expect(page.locator('#hematologySectionNotes')).toContainText('Динамика гематокрита.');
+  await expect(page.locator('#protocolSectionNotes')).toContainText('История дозировки.');
+  await expect(page.locator('#chemistrySectionNotes')).not.toContainText('Динамика гормонов.');
+  expect(await page.locator('#chemistrySectionNotes').evaluate(node=>node.previousElementSibling.id)).toBe('chemistryOverview');
+  await expect(page.locator('#textBlocksSection')).toHaveCount(0);
+  await page.locator('#journalMenuButton').click();await page.locator('#accountLogout').click();await expect(page.locator('#chemistrySectionNotes')).toBeEmpty();await expect(page.locator('#hormonesSectionNotes')).toBeEmpty();
 });
 
 test('Chart periods filter real measurements and mild elevation is yellow', async ({ page }) => {
