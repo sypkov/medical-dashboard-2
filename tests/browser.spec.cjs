@@ -51,9 +51,10 @@ test('Chart periods filter real measurements and mild elevation is yellow', asyn
   await page.goto('http://127.0.0.1:8765/');
   await page.locator('#email').fill('periods@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
   const chart=page.locator('#hormoneCharts .hematology-chart-card').first();
-  await expect(chart.locator('.chart-point')).toHaveCount(4);
+  await expect(chart.getByRole('button',{name:'6 мес',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(chart.locator('.chart-point')).toHaveCount(3);
   await expect(chart.locator('.medical-reference-gradient stop')).toHaveCount(8);
-  expect(await chart.locator('.chart-point').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('fill')))).toEqual(['#b96243','#b96243','#397b64','#a17b13']);
+  expect(await chart.locator('.chart-point').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('fill')))).toEqual(['#b96243','#397b64','#a17b13']);
   const summary=page.getByRole('table',{name:'Гормоны — три последних результата',exact:true});
   await expect(summary.locator('tbody td strong')).toHaveText(['20','19','9']);
   await expect(summary.locator('tbody td').first()).toHaveAttribute('title','Немного выше референса');
@@ -339,3 +340,36 @@ test('Journal design uses the supplied warm palette and serif headings at both s
   }
 });
 
+
+test('Markers use tables and protocol reveals seven completed and two planned injections',async ({page})=>{
+  await page.clock.install({time:new Date('2026-11-21T12:00:00Z')});
+  await page.route('https://*.supabase.co/**',async route=>{
+    const url=new URL(route.request().url());let body=[];
+    const medications=['Омнадрен','ХГЧ','Тирзепатид'];
+    if(url.pathname==='/auth/v1/token')body={access_token:'synthetic-compact',refresh_token:'synthetic-refresh',expires_at:1900000000,user:{id:'synthetic-compact-user'}};
+    else if(url.pathname.endsWith('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222',role:'owner'}];
+    else if(url.pathname.endsWith('/md_therapy_events'))body=medications.flatMap(medication=>Array.from({length:10},(_,i)=>({medication,event_at:'2026-11-'+String(i+1).padStart(2,'0')+'T08:00:00Z',dose:medication==='Омнадрен'?100:medication==='ХГЧ'?500:2.5,dose_unit:medication==='ХГЧ'?'ед':'мг'})));
+    else if(url.pathname.endsWith('/md_lab_reports'))body=[{id:'11111111-1111-4111-8111-111111111111',sample_date:'2026-11-19'},{id:'11111111-1111-4111-8111-111111111112',sample_date:'2026-11-12'}];
+    else if(url.pathname.endsWith('/md_lab_results'))body=[{report_id:'11111111-1111-4111-8111-111111111111',analyte_name:'Ферритин',numeric_value:200,unit:'мкг/л'},{report_id:'11111111-1111-4111-8111-111111111112',analyte_name:'Ферритин',numeric_value:180,unit:'мкг/л'}];
+    else if(url.pathname.endsWith('/md_content_blocks')&&url.searchParams.get('kind')==='eq.sheets_source_snapshot')body=[{body:JSON.stringify({therapy:[['Дата','ХГЧ','Омнадрен','Тирзепатид','ХГЧ_подтверждено','Омнадрен_подтверждено','Тирзепатид_подтверждено'],...['22.11.2026','24.11.2026','26.11.2026'].map(date=>[date,'500','100','2,5','','',''])]})}];
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('http://127.0.0.1:8765/');
+  await page.locator('#email').fill('compact@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
+  const markers=page.getByRole('table',{name:'Маркеры — три последних результата',exact:true});
+  await expect(markers.locator('tbody td strong')).toHaveText(['200','180']);
+  await expect(page.locator('#markersOverview .data-row')).toHaveCount(0);
+  await expect(page.locator('#labTrends')).not.toContainText('Ферритин');
+  for(const medication of ['Омнадрен','ХГЧ','Тирзепатид']){
+    const table=page.getByRole('table',{name:medication+' — история инъекций',exact:true});
+    await expect(table.locator('tbody tr')).toHaveCount(9);
+    await expect(table.locator('tbody tr.protocol-planned')).toHaveCount(2);
+    await expect(table.locator('tbody tr td:first-child')).toHaveText(['22.11.2026','24.11.2026','10.11.2026','09.11.2026','08.11.2026','07.11.2026','06.11.2026','05.11.2026','04.11.2026']);
+    const more=table.locator('xpath=ancestor::section').locator('details.protocol-more');
+    await expect(more).not.toHaveAttribute('open');
+    await more.locator('summary').click();
+    await expect(more.locator('tbody tr')).toHaveCount(4);
+  }
+  await expect(page.locator('.protocol-dose-total')).toHaveText('Всего введено: 1 000 мг');
+  await expect(page.locator('.body-period[data-days="6"]')).toHaveAttribute('aria-pressed','true');
+});

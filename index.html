@@ -76,7 +76,7 @@ body{background:#f2f0e7}.header{padding:20px 24px}.header h1{font-size:20px;font
 #overview .reference-nav a[aria-current=location]{opacity:1;border-bottom-color:#fff}
 #overview .reference-section-charts[hidden],#overview .body-vitals[hidden],#overview .protocol-notes[hidden]{display:none!important}
 </style><style>.reference-empty{padding:18px;background:#fff;border:1px solid #d3d1c7;border-radius:9px;color:#777;line-height:1.6}#labsFilter{max-width:420px}#labsCard .check{margin:10px 0}#overview .reference-panel .reference-empty{grid-column:1/-1}</style><style>.body-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}.body-toolbar button{background:#fff;color:#397b64;border:1px solid #d3d1c7;padding:8px 13px;font-size:12px;margin:0}.body-toolbar button.active{background:#397b64;color:white;border-color:#397b64}#bodyOverview .sparkline{display:block;width:100%;height:46px;margin:5px 0}.body-delta{font-size:12px;color:#555}</style><style>.body-vitals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body-vitals-card{margin:12px 0}.body-vitals-plot p{font-size:13px}.body-big-chart{display:block;width:100%;height:175px}.vitals-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}.vitals-legend span{font-size:12px;padding-left:8px}@media(max-width:700px){.body-vitals{grid-template-columns:1fr}}</style><style>#protocolOverview{display:block!important}.protocol-history-title{font-weight:650;color:#25251f;margin:0 0 12px}.protocol-table-wrap{overflow-x:auto;border:1px solid #dedbd2;border-radius:9px;background:white}.protocol-history-table{width:100%;border-collapse:collapse;font-size:12px}.protocol-history-table th{text-align:left;color:#397b64;background:#f2f0e7}.protocol-history-table td,.protocol-history-table th{padding:10px 12px;border-bottom:1px solid #eceae3;vertical-align:top}.protocol-history-table tr:last-child td{border-bottom:0}.protocol-history-table td:nth-child(3){font-weight:700;white-space:nowrap}</style><style>.protocol-legend{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.protocol-legend span{background:#ece9df;color:#25251f;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600}</style><style>.protocol-notes{margin:16px 0 22px}.protocol-notes h3{font-size:16px;color:#25251f;margin-bottom:10px}.protocol-note{background:#fff;border:1px solid #dcd9d1;border-radius:8px;margin:7px 0;padding:10px 13px}.protocol-note summary{cursor:pointer;font-weight:600;color:#25251f}.protocol-note p{white-space:pre-wrap;line-height:1.65;margin-top:10px;font-size:13px}</style><style>.visits-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}.visits-tools label{font-size:12px;font-weight:600;color:#25251f}.visits-tools input{flex:1 1 230px;min-width:160px;border:1px solid #d3d1c7;border-radius:8px;padding:9px 11px;background:white}.visits-tools button{border:1px solid #397b64;background:white;color:#397b64;border-radius:8px;padding:9px 11px;cursor:pointer;font-size:12px}.visits-tools button:hover{background:#ece9df}</style><style>.reference-section-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 24px}.hematology-chart-card{background:#fff;border:1px solid #dedbd2;border-radius:10px;padding:14px}.hematology-chart-card h3{font-size:14px;color:#25251f;margin:0 0 6px}.hematology-chart-card strong{display:block;font-size:19px}.hematology-line-chart{width:100%;height:145px;display:block;margin:9px 0}.hematology-chart-card small{font-size:11px;color:#777}@media(max-width:700px){.reference-section-charts{grid-template-columns:1fr}}</style><style>
-.protocol-history-table td:first-child{white-space:nowrap}
+.protocol-more{margin-top:14px}.protocol-more>summary{cursor:pointer;color:var(--green);padding:8px 0}.protocol-planned{background:#f5f1df}.protocol-history-table td:first-child{white-space:nowrap}
 @media(max-width:700px){
   .protocol-history-table,.protocol-history-table tbody{display:block}
   .protocol-history-table thead{display:none}
@@ -237,7 +237,7 @@ button:hover{filter:brightness(.96)}
 .chart-period-toolbar button.active{background:var(--green-soft);color:#275e4b;border-color:#b8d0c1;font-weight:500}
 .chart-period-toolbar button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style><style id="reference-line-colors">#overview .reference-panel .data-row.mild>strong{color:var(--mild-line)!important}.reference-color-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;margin:8px 0}.reference-color-legend span{white-space:nowrap}</style><style id="chemistry-tables-and-text">
-#chemistryOverview,#hormonesOverview,#hematologyOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
+#chemistryOverview,#hormonesOverview,#hematologyOverview,#markersOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
 .medical-results-table{width:100%;min-width:610px;border-collapse:collapse;font-size:14px}.medical-results-table th,.medical-results-table td{text-align:left;padding:13px 14px;vertical-align:top;border-bottom:1px solid var(--border)}.medical-results-table thead th{font-weight:500;color:var(--muted);background:#eeece3}.medical-results-table tbody th{font-weight:500;min-width:200px;max-width:260px}.medical-results-table tbody td{min-width:125px}.medical-results-table tr:last-child>*{border-bottom:0}.medical-results-table small{display:block;font-size:12px;font-weight:400;margin-top:5px}.medical-results-table strong{font-size:18px;font-weight:500}.chemistry-history{margin:22px 0}.chemistry-history>summary{cursor:pointer;color:var(--green);font-size:16px;font-weight:500}
 .medical-text-block{padding:18px 20px;margin:12px 0;border:1px solid var(--border);border-radius:18px;background:var(--paper)}.medical-text-block>summary{cursor:pointer;font-weight:500;color:var(--ink)}.medical-text-block h3{font-size:22px;margin:0 0 12px}.medical-text-body p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.65;color:var(--ink)}.medical-text-body p:last-child{margin-bottom:0}#medicalTextBlocks>p{font-size:14px}
 </style><style id="chemistry-mobile">@media(max-width:700px){.chemistry-summary{min-width:0;table-layout:fixed;font-size:12px}.chemistry-summary th,.chemistry-summary td{padding:10px 6px;min-width:0!important;max-width:none!important;overflow-wrap:anywhere}.chemistry-summary th:first-child{width:37%}.chemistry-summary strong{font-size:16px}.chemistry-summary small{font-size:10.5px;line-height:1.45}.chemistry-summary thead th{font-size:11px}}</style><style id="thematic-explanations">
@@ -261,7 +261,7 @@ button:hover{filter:brightness(.96)}
 <div id="hematologySectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="chemistrySection">Биохимия и другие исследования</div><div id="chemistryOverview" class="reference-panel"></div>
 <div id="chemistrySectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="markersSection">Маркеры</div><div id="markersOverview" class="reference-panel"><p>Доступные маркеры из лабораторных результатов появятся здесь.</p></div>
 <div id="markersSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="protocolSection">Протокол</div><div id="protocolOverview" class="reference-panel"><div class="reference-empty">Загружаем назначения…</div></div><div id="protocolNotes" class="protocol-notes"><div class="reference-empty">Загружаем историю изменений схемы…</div></div>
-<div id="protocolSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="bodySection">Состав тела и давление</div><div class="body-toolbar" role="group" aria-label="Период измерений"><button type="button" class="body-period active" data-days="all" aria-pressed="true">Показать все</button><button type="button" class="body-period" data-days="6" aria-pressed="false">6 мес</button><button type="button" class="body-period" data-days="3" aria-pressed="false">3 мес</button></div><div id="bodyOverview" class="reference-panel"><div class="reference-empty">Загружаем измерения…</div></div><div class="body-vitals"><div class="card body-vitals-card"><h3>Артериальное давление</h3><div id="bloodPressureChart" class="body-vitals-plot"></div></div><div class="card body-vitals-card"><h3>Пульс</h3><div id="pulseChartNew" class="body-vitals-plot"></div></div></div><p class="overview-footnote">Давление и пульс — из дневника измерений. История инъекций — по подтверждённым записям.</p><p class="overview-footnote" id="diarySyncStatus" role="status" aria-live="polite"></p>
+<div id="protocolSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="bodySection">Состав тела и давление</div><div class="body-toolbar" role="group" aria-label="Период измерений"><button type="button" class="body-period" data-days="all" aria-pressed="false">Показать все</button><button type="button" class="body-period active" data-days="6" aria-pressed="true">6 мес</button><button type="button" class="body-period" data-days="3" aria-pressed="false">3 мес</button></div><div id="bodyOverview" class="reference-panel"><div class="reference-empty">Загружаем измерения…</div></div><div class="body-vitals"><div class="card body-vitals-card"><h3>Артериальное давление</h3><div id="bloodPressureChart" class="body-vitals-plot"></div></div><div class="card body-vitals-card"><h3>Пульс</h3><div id="pulseChartNew" class="body-vitals-plot"></div></div></div><p class="overview-footnote">Давление и пульс — из дневника измерений. История инъекций — по подтверждённым записям.</p><p class="overview-footnote" id="diarySyncStatus" role="status" aria-live="polite"></p>
 <div id="bodySectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="visitsSection">Врачи</div><div class="visits-tools"><label for="visitsSearch">Поиск по консультациям</label><input id="visitsSearch" type="search" placeholder="Специалист, дата, диагноз, процедура" autocomplete="off"><button type="button" id="visitsExpand">Развернуть всё</button><button type="button" id="visitsCollapse">Свернуть всё</button></div><div id="visitsOverview" class="reference-panel"><div class="reference-empty">Загружаем консультации…</div></div><div id="visitsSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div>
 <p class="overview-footnote">Все показатели загружаются из Supabase после авторизации. Исторические результаты, перенесённые из старого дашборда, могут не иметь подтверждения оригинальным лабораторным документом. Оценку результатов проводит лечащий врач.</p>
 </div></section><section class="card hidden" id="labsCard"><h2>Лабораторные анализы</h2><p>Результаты загружаются из Supabase с учётом прав доступа текущего пользователя.</p><button id="loadLabs" type="button">Обновить анализы</button><label for="labsFilter">Поиск по названию анализа</label><input id="labsFilter" type="search" placeholder="Например, гемоглобин, эстрадиол…"><label class="check"><input type="checkbox" id="onlyAbnormal"><span>Показать только отклонения от референсов</span></label><p id="labsStatus">Нажми «Обновить анализы» для защищённого чтения.</p><div id="labsList"></div><h3>Динамика показателей</h3><div id="labTrends"></div><details id="sourceArchive"><summary>Архив исходного дашборда</summary><p>Исторические таблицы, назначения и примечания. Доступны владельцу аккаунта.</p><div id="archiveContent"></div></details></section><section class="card" id="importCard"><h2>Импорт лабораторных данных</h2><label>Файл<input id="file" type="file" accept=".json,application/json"></label><p id="fileinfo">Файл не выбран</p><button id="stage" disabled>Подготовить импорт</button></section><section class="card hidden" id="preview"><h2>Проверка перед сохранением</h2><p id="summary"></p><div id="source"></div><h2>Показатели</h2><div id="results"></div><h2>Интерпретации</h2><div id="blocks"></div><label class="check"><input type="checkbox" id="agree"><span>Я сверил значения, единицы, референсы и уровни доступа с исходным документом.</span></label><button id="confirm" disabled>Подтвердить и сохранить</button><button id="close">Закрыть просмотр</button></section><p class="status" id="status">Загрузка конфигурации…</p></main><script src="./config.js?v=20261119-3"></script><script>
@@ -312,7 +312,7 @@ function addMedicalPeriodToolbar(host,key,onChange){
   const toolbar=text(host,'div','','chart-period-toolbar');toolbar.setAttribute('role','group');toolbar.setAttribute('aria-label','Период графика');toolbar.dataset.periodKey=key;
   for(const [period,label] of [['all','Показать все'],['6','6 мес'],['3','3 мес']]){
     const button=text(toolbar,'button',label);button.type='button';button.dataset.period=period;
-    const active=(labChartPeriods.get(key)||'all')===period;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
+    const active=(labChartPeriods.get(key)||'6')===period;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
     button.addEventListener('click',()=>{const before=toolbar.getBoundingClientRect().top;labChartPeriods.set(key,period);onChange();const next=[...document.querySelectorAll('.chart-period-toolbar')].find(node=>node.dataset.periodKey===key);if(next){const selected=next.querySelector('[aria-pressed=true]');if(selected)selected.focus({preventScroll:true});window.scrollBy(0,next.getBoundingClientRect().top-before);}});
   }
 }
@@ -568,13 +568,14 @@ function attachMedicalChartTooltip(svg,entries,onSelect){
 function renderTrends(reports,results){
 const host=e('labTrends');host.replaceChildren();const dated=new Map(reports.map(r=>[r.id,r.sample_date||r.report_date]));const labs=new Map(reports.map(r=>[r.id,r.lab_name||'Лаборатория не указана']));const series=new Map();
 function normalize(s){return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z0-9%]+/g,' ').trim()}
+const markerNames=new Set([...document.querySelectorAll('#markersOverview .chemistry-summary tbody th span')].map(node=>normalize(node.textContent)));
 const detailedNames=new Set();
 for(const card of document.querySelectorAll('#hormoneCharts .hematology-chart-card, #hematologyCharts .hematology-chart-card')){
   if(card.querySelector('svg'))detailedNames.add(normalize(canonicalAnalyteName(card.querySelector('h3').textContent)));
 }
 
-for(const r of results){if(r.numeric_value==null||!validLabDate(dated.get(r.report_id)))continue;const name=normalize(canonicalAnalyteName(r.analyte_name||r.analyte_code));const detailedName=normalize(canonicalAnalyteName(r.analyte_name||r.analyte_code).replace(/\s*\([^)]*\)\s*$/,''));if(detailedNames.has(detailedName))continue;const converted=trendMedicalValue(r);if(!Number.isFinite(converted.value))continue;const key=name+'|'+normalize(converted.unit);if(!series.has(key))series.set(key,[]);series.get(key).push({date:dated.get(r.report_id),value:converted.value,name:canonicalAnalyteName(r.analyte_name||r.analyte_code),unit:converted.unit,lab:labs.get(r.report_id),refLow:r.ref_low,refHigh:r.ref_high})}
-let count=0;for(const allPoints of series.values()){const periodKey='trend:'+allPoints[0].name+'|'+allPoints[0].unit;const points=filterMedicalPeriod(allPoints,labChartPeriods.get(periodKey)||'all');points.sort((a,b)=>a.date.localeCompare(b.date));if(allPoints.length<2)continue;count++;const panel=text(host,'div','','lab-report');text(panel,'strong',points[0].name+' · '+points[0].unit);addMedicalPeriodToolbar(panel,periodKey,()=>renderTrends(reports,results));
+for(const r of results){if(r.numeric_value==null||!validLabDate(dated.get(r.report_id)))continue;const name=normalize(canonicalAnalyteName(r.analyte_name||r.analyte_code));const detailedName=normalize(canonicalAnalyteName(r.analyte_name||r.analyte_code).replace(/\s*\([^)]*\)\s*$/,''));if(detailedNames.has(detailedName)||markerNames.has(name))continue;const converted=trendMedicalValue(r);if(!Number.isFinite(converted.value))continue;const key=name+'|'+normalize(converted.unit);if(!series.has(key))series.set(key,[]);series.get(key).push({date:dated.get(r.report_id),value:converted.value,name:canonicalAnalyteName(r.analyte_name||r.analyte_code),unit:converted.unit,lab:labs.get(r.report_id),refLow:r.ref_low,refHigh:r.ref_high})}
+let count=0;for(const allPoints of series.values()){const periodKey='trend:'+allPoints[0].name+'|'+allPoints[0].unit;const points=filterMedicalPeriod(allPoints,labChartPeriods.get(periodKey)||'6');points.sort((a,b)=>a.date.localeCompare(b.date));if(allPoints.length<2)continue;count++;const panel=text(host,'div','','lab-report');text(panel,'strong',points[0].name+' · '+points[0].unit);addMedicalPeriodToolbar(panel,periodKey,()=>renderTrends(reports,results));
 const values=points.map(p=>p.value),min=Math.min(...values),max=Math.max(...values),span=max-min||1;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 600 150');svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика '+points[0].name);svg.style.cssText='width:100%;height:150px;display:block;margin:12px 0';panel.append(svg);
 for(const y of [25,65,105]){const grid=document.createElementNS('http://www.w3.org/2000/svg','line');grid.setAttribute('x1','35');grid.setAttribute('x2','590');grid.setAttribute('y1',String(y));grid.setAttribute('y2',String(y));grid.setAttribute('stroke','#e5e2db');svg.append(grid)}
 const first=Date.parse(points[0].date+'T00:00:00Z'),last=Date.parse(points[points.length-1].date+'T00:00:00Z');const sameDay=new Map();for(const p of points){if(!sameDay.has(p.date))sameDay.set(p.date,[]);sameDay.get(p.date).push(p)}const xPositions=new Map();for(const group of sameDay.values()){const date=Date.parse(group[0].date+'T00:00:00Z');const center=first===last?312.5:35+555*(date-first)/(last-first);const step=Math.min(8,Math.max(0,2*Math.min(center-35,590-center))/Math.max(1,group.length-1));group.forEach((p,i)=>xPositions.set(p,center+(i-(group.length-1)/2)*step))}const xOf=p=>xPositions.get(p);const yOf=p=>110-(p.value-min)/span*90;const poly=document.createElementNS('http://www.w3.org/2000/svg','path');poly.classList.add('medical-curve');poly.setAttribute('d',medicalSmoothPath(points.map(p=>({x:xOf(p),y:yOf(p)}))));poly.setAttribute('fill','none');poly.setAttribute('stroke',medicalReferenceStroke(svg,value=>110-(value-min)/span*90,min,max,points[points.length-1].refLow,points[points.length-1].refHigh,points[0].name));poly.setAttribute('stroke-width','2.5');poly.setAttribute('stroke-linecap','round');poly.setAttribute('stroke-linejoin','round');svg.append(poly);
@@ -664,7 +665,7 @@ function renderHematologyCharts(reports,results,section='hematology'){
     const figure=text(card,'strong',String(latest.value).replace('.',','));
     text(figure,'span',' '+(latest.unit||def.unit),'result-unit');
     const comparable=points.filter(point=>point.unit===latest.unit);
-    const plotted=filterMedicalPeriod(comparable,labChartPeriods.get(periodKey)||'all');
+    const plotted=filterMedicalPeriod(comparable,labChartPeriods.get(periodKey)||'6');
     if(comparable.length!==points.length)text(card,'small','График строится по результатам в '+(latest.unit||def.unit)+'.');
     if(!plotted.length){text(card,'p','За выбранный период измерений нет.','reference-empty');continue}
     if(def.title==='Гемоглобин'&&points.some(point=>point.converted))text(card,'small','Результаты в г/дл пересчитаны в г/л (×10).');
@@ -802,7 +803,7 @@ function listInto(id,items,empty){const target=e(id);target.replaceChildren();if
 listInto('overviewAttention',attention,'Среди четырёх ключевых показателей нет значений вне указанных референсов.');
 listInto('overviewNormal',normal,'Нет ключевых показателей с указанным референсом внутри интервала.');
 const groups=[
-{id:'markersOverview',match:n=>/пса|онкомаркер|с[- ]реактивн|срб|гомоцистеин|витамин|железо|трансферрин|фолиев|nt-probnp|рэа|цинк|ферритин/.test(n)},
+{id:'markersOverview',tableName:'Маркеры',sortByHistory:true,match:n=>/пса|онкомаркер|с[- ]реактивн|срб|гомоцистеин|витамин|железо|трансферрин|фолиев|nt-probnp|рэа|цинк|ферритин/.test(n)},
 {id:'hormonesOverview',tableName:'Гормоны',sortByHistory:true,match:n=>/тестостерон|эстрадиол|пролактин|лютеинизир|лг|фсг|гспг|дгэа|кортизол|кортизон|кортикостер|кортикостерон|прогестерон|прегненолон|андростендион|дегидроэпиандростерон|инсулин|лептин|андроген|индекс своб|^ист(?:\s|$)|птг|паратгормон|тиреотроп|т4|т3/.test(n)},
 {id:'hematologyOverview',tableName:'Гематология',sortByHistory:true,match:n=>/гематокрит|гемоглобин|эритроцит|тромбоцит|лейкоцит|нейтрофил|эозинофил|базофил|моноцит|лимфоцит|соэ|mcv|mch|rdw|mpv|pdw|pct/.test(n)},
 {id:'chemistryOverview',tableName:'Биохимия',match:n=>true}];
@@ -830,7 +831,7 @@ text(row,'span',displayMedicalDate(x.date),'date');if(!x.date)text(row,'span',la
 }
 e('overviewStatus').textContent='Последние лабораторные результаты · '+reports.length+' отчётов · '+results.length+' показателей';
 }
-let bodyHistory=[];let bodyPeriod='all';
+let bodyHistory=[];let bodyPeriod='6';
 function drawMedicalLine(host,series,units){
   host.replaceChildren();
   const valid=point=>point.value!==null&&point.value!==undefined&&String(point.value).trim()!==''&&Number.isFinite(Number(point.value))&&point.measured_at&&Number.isFinite(Date.parse(point.measured_at));
@@ -939,7 +940,28 @@ function renderConsultations(){
 async function loadConsultations(serial=labsRequestSerial){const epoch=privateViewEpoch;if(!signed||serial!==labsRequestSerial)return;const host=e('visitsOverview');if(!host)return;host.replaceChildren();try{const rows=await labReadPages('md_content_blocks?select=title,body,kind&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.consultation_history&order=title.asc,id.asc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;consultationHistory=rows;renderConsultations()}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial){consultationHistory=[];host.replaceChildren();text(host,'div','Не удалось загрузить консультации: '+(err.message||String(err)),'reference-empty')}}}
 e('visitsSearch').addEventListener('input',renderConsultations);e('visitsExpand').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=true));e('visitsCollapse').addEventListener('click',()=>e('visitsOverview').querySelectorAll('details').forEach(d=>d.open=false));
 
-function renderProtocolTables(host,rows,inventory=null){
+function plannedProtocolEvents(snapshot,today){
+  const rows=snapshot?.therapy;
+  if(!Array.isArray(rows)||!rows.length)return [];
+  const header=rows[0],dateColumn=header.indexOf('Дата'),events=[];
+  for(const row of rows.slice(1)){
+    const match=String(row[dateColumn]||'').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if(!match)continue;
+    const date=match[3]+'-'+match[2].padStart(2,'0')+'-'+match[1].padStart(2,'0');
+    if(!validLabDate(date)||date<=today)continue;
+    for(const medication of ['Омнадрен','ХГЧ','Тирзепатид']){
+      const doseColumn=header.indexOf(medication),confirmationColumn=header.indexOf(medication+'_подтверждено');
+      if(doseColumn<0||confirmationColumn<0)continue;
+      const raw=String(row[doseColumn]||'').trim();
+      if(!/^\d+(?:[,.]\d+)?$/.test(raw)||Number(raw.replace(',','.'))<=0)continue;
+      if(String(row[confirmationColumn]||'').trim().toLocaleLowerCase('ru')==='нет')continue;
+      events.push({event_at:date+'T08:00:00Z',medication,dose:Number(raw.replace(',','.')),dose_unit:medication==='ХГЧ'?'ед':'мг',note:'Плановая инъекция',planned:true});
+    }
+  }
+  return events.filter((event,index)=>events.findIndex(other=>other.medication===event.medication&&other.event_at===event.event_at)===index);
+}
+
+function renderProtocolTables(host,rows,inventory=null,plans=[]){
   const groups=new Map(['Омнадрен','ХГЧ','Тирзепатид'].map(name=>[name,[]]));
   for(const row of rows){
     const name=String(row.medication||'Препарат').trim();
@@ -948,10 +970,12 @@ function renderProtocolTables(host,rows,inventory=null){
     groups.get(canonical).push(row);
   }
   const format=value=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:3}).format(value);
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Baku'}).format(new Date());
   for(const [name,events] of groups){
+    const upcoming=plans.filter(event=>event.medication===name).sort((a,b)=>a.event_at.localeCompare(b.event_at));
     const section=text(host,'section','','protocol-medication');
     text(section,'h3',name+' · '+events.length+' инъекций');
-    if(!events.length){text(section,'p','Записей пока нет.');continue}
+    if(!events.length&&!upcoming.length){text(section,'p','Записей пока нет.');continue}
     const ordered=[...events].sort((a,b)=>String(a.event_at||'').localeCompare(String(b.event_at||'')));
     const cumulative=new Map();
     const doses=new Map();
@@ -988,29 +1012,37 @@ function renderProtocolTables(host,rows,inventory=null){
         text(section,'small','Остаток рассчитан по введённым дозам, без учёта потерь при наборе и утилизации.');
       }
     }
-    const wrap=text(section,'div','','protocol-table-wrap');
-    const table=document.createElement('table');
-    table.className='protocol-history-table';
-    table.setAttribute('aria-label',name+' — история инъекций');
-    wrap.append(table);
-    const head=document.createElement('thead');table.append(head);
-    const header=text(head,'tr','');
-    const labels=['Дата','Препарат','Доза','Примечание'];
-    if(omnadren)labels.push(stockValid?'Накопительная доза и остаток':'Накопительная доза');
-    for(const label of labels)text(header,'th',label);
-    const body=document.createElement('tbody');table.append(body);
-    for(const event of [...ordered].reverse()){
-      const row=text(body,'tr','');
-      text(row,'td',displayMedicalDate(String(event.event_at||'').slice(0,10)));
-      text(row,'td',event.medication||name);
-      text(row,'td',[event.dose,event.dose_unit].filter(value=>value!==null&&value!==undefined&&value!=='').join(' ')||'—');
-      renderProtocolNote(text(row,'td',''),event.note);
-      if(omnadren){
-        const value=cumulative.get(event);
-        const balance=text(row,'td','','protocol-cumulative');
-        text(balance,'div','Накоплено: '+format(value.total)+' мг'+(value.missing?' · неполный итог':''));
-        if(stockValid&&!value.missing)text(balance,'div','Остаток: '+stockText(receivedBy(String(event.event_at).slice(0,10))-value.total));
+    function tableInto(parent,entries,archive=false){
+      const wrap=text(parent,'div','','protocol-table-wrap');
+      const table=text(wrap,'table','','protocol-history-table');
+      table.setAttribute('aria-label',name+(archive?' — остальные инъекции':' — история инъекций'));
+      const header=text(text(table,'thead',''),'tr','');
+      const labels=['Дата','Препарат','Доза','Примечание'];
+      if(omnadren)labels.push(stockValid?'Накопительная доза и остаток':'Накопительная доза');
+      for(const label of labels)text(header,'th',label);
+      const body=text(table,'tbody','');
+      for(const event of entries){
+        const row=text(body,'tr','',event.planned?'protocol-planned':'');
+        text(row,'td',displayMedicalDate(String(event.event_at||'').slice(0,10)));
+        text(row,'td',event.medication||name);
+        text(row,'td',[event.dose,event.dose_unit].filter(value=>value!==null&&value!==undefined&&value!=='').join(' ')||'—');
+        renderProtocolNote(text(row,'td',''),event.note);
+        if(omnadren){
+          const balance=text(row,'td','','protocol-cumulative');
+          if(event.planned){text(balance,'span','Плановая');continue}
+          const value=cumulative.get(event);
+          text(balance,'div','Накоплено: '+format(value.total)+' мг'+(value.missing?' · неполный итог':''));
+          if(stockValid&&!value.missing)text(balance,'div','Остаток: '+stockText(receivedBy(String(event.event_at).slice(0,10))-value.total));
+        }
       }
+    }
+    const completed=[...ordered].reverse();
+    tableInto(section,[...upcoming.slice(0,2),...completed.slice(0,7)]);
+    const remaining=[...upcoming.slice(2),...completed.slice(7)];
+    if(remaining.length){
+      const details=text(section,'details','','protocol-more');
+      text(details,'summary','Остальные инъекции · '+remaining.length);
+      tableInto(details,remaining,true);
     }
   }
 }
@@ -1053,6 +1085,7 @@ const groups=[
 {id:'protocolOverview',table:'md_therapy_events',select:'event_at,medication,dose,dose_unit,note',date:'event_at',render:(row,item)=>{text(item,'span',row.medication||'Препарат','card-label');text(item,'strong',[row.dose,row.dose_unit].filter(x=>x!==null&&x!==undefined&&x!=='').join(' ')||'Доза не указана');if(row.note)text(item,'span',row.note,'ref')}},
 {id:'bodyOverview',table:'md_diary_entries',select:'measured_at,metric,value,unit',date:'measured_at',render:(row,item)=>{text(item,'span',row.metric||'Измерение','card-label');text(item,'strong',[row.value,row.unit].filter(x=>x!==null&&x!==undefined&&x!=='').join(' '))}}];
 await Promise.all(groups.map(async group=>{const host=e(group.id);if(!host)return;host.replaceChildren();try{const rows=await labReadPages(group.table+'?select='+group.select+'&patient_id=eq.'+encodeURIComponent(PATIENT)+'&order='+group.date+'.desc,id.desc',epoch,serial);if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;if(!rows.length){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([])}else{therapyTimeline=[];renderTherapyTimeline()}text(host,'div',group.id==='protocolOverview'?'Назначения пока не добавлены в защищённую базу.':'Измерения пока не добавлены в защищённую базу.','reference-empty');if(group.id==='protocolOverview')loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});return}if(group.id==='bodyOverview'){bodyHistory=rows;renderBodyHistory(rows);return}if(group.id==='protocolOverview'){therapyTimeline=rows;renderTherapyTimeline();loadProtocolNotes(serial).catch(err=>{if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)status(err.message)});let inventory=null;
+let plans=[];
 try{
   const blocks=await labReadPages('md_content_blocks?select=body&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.medication_inventory&order=created_at.desc,id.desc',epoch,serial);
   inventory=blocks.map(block=>JSON.parse(block.body)).find(block=>block.medication==='Омнадрен')||null;
@@ -1060,7 +1093,15 @@ try{
   if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)text(host,'p','Не удалось загрузить запас препарата.');
 }
 if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;
-renderProtocolTables(host,rows,inventory);return}
+try{
+  const snapshots=await labReadPages('md_content_blocks?select=body&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.sheets_source_snapshot&order=created_at.desc,id.desc',epoch,serial);
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Baku'}).format(new Date());
+  plans=plannedProtocolEvents(snapshots.length?JSON.parse(snapshots[0].body):null,today);
+}catch(error){
+  if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)text(host,'p','Не удалось загрузить плановые инъекции.');
+}
+if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;
+renderProtocolTables(host,rows,inventory,plans);return}
 
 for(const row of rows){const item=text(host,'div','','data-row');group.render(row,item);text(item,'span',String(row[group.date]||'').slice(0,10),'date')}}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial){if(group.id==='bodyOverview'){bodyHistory=[];renderBodyHistory([]);host.replaceChildren()}else{therapyTimeline=[];renderTherapyTimeline();host.replaceChildren();e('protocolNotes').replaceChildren()}text(host,'div','Не удалось загрузить данные: '+(err.message||String(err)),'reference-empty')}}}))
 }
