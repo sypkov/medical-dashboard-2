@@ -412,13 +412,13 @@ function medicalReferenceText(reference,unit=''){
   if(reference.low!==null||reference.high!==null)return (reference.low===null?'до '+format(reference.high):reference.high===null?'от '+format(reference.low):format(reference.low)+'–'+format(reference.high))+(unit?' '+unit:'');
   return reference.text||'не указан';
 }
-function buildChemistrySeries(items){
+function buildChemistrySeries(items,sortByHistory=false){
   const groups=new Map();
   for(const item of items){const row=item.latest,key=row.name.toLocaleLowerCase('ru')+'|'+String(row.unit||'').trim().toLocaleLowerCase('ru');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);}
-  return [...groups.values()].map(rows=>rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).sort((a,b)=>a[0].name.localeCompare(b[0].name,'ru'));
+  return [...groups.values()].map(rows=>rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).sort((a,b)=>(sortByHistory?b.length-a.length:0)||a[0].name.localeCompare(b[0].name,'ru'));
 }
 function renderLabHistoryTable(host,items,results,dates,labs,sectionName){
-  const series=buildChemistrySeries(items);
+  const series=buildChemistrySeries(items,sectionName==='Гормоны');
   text(host,'p','Три последних результата каждого показателя. Дата указана в каждой ячейке.','chemistry-caption');
   function tableInto(parent,label,headers){const wrap=text(parent,'div','','medical-table-wrap'),table=text(wrap,'table','','medical-results-table');table.setAttribute('aria-label',label);const head=text(text(table,'thead',''),'tr','');for(const title of headers){const cell=text(head,'th',title);cell.scope='col';}return text(table,'tbody','');}
   function resultInto(cell,row,showDate=true){
