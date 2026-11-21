@@ -4,6 +4,31 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://*.supabase.co/**', route => route.abort());
 });
 
+test('Chart periods filter real measurements and mild elevation is yellow', async ({ page }) => {
+  const dates=['2026-01-10','2026-07-10','2026-10-10','2026-11-10'];
+  const ids=dates.map((_,i)=>'11111111-1111-4111-8111-11111111111'+i);
+  await page.route('https://*.supabase.co/**',async route=>{
+    const url=route.request().url();let body=[];
+    if(url.includes('/auth/v1/token'))body={access_token:'synthetic-period-token',refresh_token:'synthetic-refresh',expires_at:Math.floor(Date.now()/1000)+3600,user:{id:'synthetic-period-user'}};
+    else if(url.includes('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222',role:'owner'}];
+    else if(url.includes('/md_lab_reports'))body=dates.map((date,i)=>({id:ids[i],sample_date:date,report_date:date,lab_name:'Тестовая лаборатория'}));
+    else if(url.includes('/md_lab_results'))body=dates.map((_,i)=>({report_id:ids[i],analyte_name:'Тестостерон общий',numeric_value:i===3?20:19,unit:'нмоль/л',ref_low:10,ref_high:19.6}));
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('http://127.0.0.1:8765/');
+  await page.locator('#email').fill('periods@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
+  const chart=page.locator('#hormoneCharts .hematology-chart-card').first();
+  await expect(chart.locator('.chart-point')).toHaveCount(4);
+  await expect(chart.locator('.chart-status')).toHaveCSS('background-color','rgb(255, 242, 189)');
+  await expect(page.locator('#overviewMetrics .metric.mild .result-badge')).toHaveCSS('background-color','rgb(255, 242, 189)');
+  const mild=page.locator('#hormonesOverview .data-row.mild').first();
+  await expect(mild).toHaveCSS('border-top-color','rgb(215, 183, 78)');
+  await chart.getByRole('button',{name:'6 мес',exact:true}).click();await expect(chart.locator('.chart-point')).toHaveCount(3);
+  await chart.getByRole('button',{name:'3 мес',exact:true}).click();await expect(chart.locator('.chart-point')).toHaveCount(2);
+  await expect(chart.getByRole('button',{name:'3 мес',exact:true})).toHaveAttribute('aria-pressed','true');
+  await chart.getByRole('button',{name:'Показать все',exact:true}).click();await expect(chart.locator('.chart-point')).toHaveCount(4);
+});
+
 test('Unauthenticated visitor sees login but no medical dashboard', async ({ page }) => {
   await page.goto('http://127.0.0.1:8765/');
   await expect(page.locator('#loginCard')).toBeVisible();
@@ -236,7 +261,7 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await expect(page.locator('#diarySyncStatus')).toContainText('10.01.2026');
   await expect(page.locator('#diarySyncStatus')).toContainText('успешно');
   await expect(page.locator('#pulseChartNew svg')).toBeVisible();
-  await page.getByRole('button',{name:'30 дней',exact:true}).click();
+  await page.locator('.body-toolbar').getByRole('button',{name:'3 мес',exact:true}).click();
   await expect(page.locator('#bloodPressureChart')).toContainText('118');
   await page.getByRole('link',{name:'Все анализы',exact:true}).click();
   await page.locator('#sourceArchive > summary').click();
