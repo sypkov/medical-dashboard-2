@@ -129,6 +129,7 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
       body: JSON.stringify([{ report_id: fakeReport, analyte_code: 'test_glucose',
         analyte_name: 'Глюкоза', numeric_value: 5.2, unit: 'ммоль/л',
         ref_low: 4.1, ref_high: 6.1, text_value: null, reference_text: null, flag: null },
+        {report_id:fakeReport,analyte_code:'synthetic_wbc',analyte_name:'Лейкоциты',numeric_value:6,unit:'×10⁹/л'},
         {report_id:fakeReport,analyte_code:'baso_pct',analyte_name:'Базофилы %',numeric_value:0.8,unit:'%',ref_low:0,ref_high:0.7},
         {report_id:'33333333-3333-4333-8333-333333333333',analyte_code:'baso_pct',analyte_name:'Базофилы %',numeric_value:0.5,unit:'%',ref_low:0,ref_high:0.7}, ...['Тестостерон общий','Эстрадиол (E2)','Гематокрит','Гемоглобин','Эритроциты','Тромбоциты'].flatMap((name,index)=>[
           {report_id:fakeReport,analyte_code:'chart_'+index,analyte_name:name,numeric_value:20+index,...(index===0?{ref_low:10,ref_high:19.6}:{}),unit:['нмоль/л','пмоль/л','%','г/л','×10¹²/л','×10⁹/л'][index]},
@@ -152,13 +153,18 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await page.locator('#labsFilter').fill('');
   await page.locator('#labsList details').first().evaluate(el => { el.open = true; });
   await expect(page.locator('#labsList .row').first()).toContainText('5.2');
-  const basophils = page.locator('#hematologyOverview .data-row').filter({hasText:'Базофилы %'});
-  await expect(basophils).toHaveCount(2);
+  const hematology = page.getByRole('table',{name:'Гематология — три последних результата',exact:true});
+  const basophils = hematology.getByRole('row').filter({hasText:'Базофилы %'});
+  await expect(basophils).toHaveCount(1);
+  await expect(basophils.locator('td strong')).toHaveText(['0,8','0,5']);
+  await expect(hematology.locator('tbody th span').last()).toHaveText('Лейкоциты');
+  const hematologyHistory = page.locator('#hematologyOverview details');
+  await expect(hematologyHistory).not.toHaveAttribute('open');
+  await hematologyHistory.locator('summary').click();
+  const hematologyDates = hematologyHistory.locator('tbody td:first-child');
+  await expect(hematologyDates).toHaveText([...Array(6).fill('10.01.2026'),...Array(5).fill('03.01.2026')]);
   await expect(page.locator('#chemistryOverview')).toContainText('Без точной даты');
   await expect(page.locator('#chemistryOverview')).toContainText('Синтетический архив без дня анализа');
-  await expect(basophils.first()).toContainText('0,8 %');
-  await expect(basophils.last()).toContainText('0,5 %');
-  await expect(page.locator('#hematologyOverview .lab-date-heading')).toHaveText(['10.01.2026','03.01.2026']);
   await expect(page.locator('#hormoneCharts svg')).toHaveCount(2);
   await expect(page.locator('#hormoneCharts .chart-status').first()).toHaveText('немного выше');
   await expect(page.locator('#overviewMetrics .metric').nth(1)).toContainText('немного выше');

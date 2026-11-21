@@ -237,7 +237,7 @@ button:hover{filter:brightness(.96)}
 .chart-period-toolbar button.active{background:var(--green-soft);color:#275e4b;border-color:#b8d0c1;font-weight:500}
 .chart-period-toolbar button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style><style id="reference-line-colors">#overview .reference-panel .data-row.mild>strong{color:var(--mild-line)!important}.reference-color-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;margin:8px 0}.reference-color-legend span{white-space:nowrap}</style><style id="chemistry-tables-and-text">
-#chemistryOverview,#hormonesOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
+#chemistryOverview,#hormonesOverview,#hematologyOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
 .medical-results-table{width:100%;min-width:610px;border-collapse:collapse;font-size:14px}.medical-results-table th,.medical-results-table td{text-align:left;padding:13px 14px;vertical-align:top;border-bottom:1px solid var(--border)}.medical-results-table thead th{font-weight:500;color:var(--muted);background:#eeece3}.medical-results-table tbody th{font-weight:500;min-width:200px;max-width:260px}.medical-results-table tbody td{min-width:125px}.medical-results-table tr:last-child>*{border-bottom:0}.medical-results-table small{display:block;font-size:12px;font-weight:400;margin-top:5px}.medical-results-table strong{font-size:18px;font-weight:500}.chemistry-history{margin:22px 0}.chemistry-history>summary{cursor:pointer;color:var(--green);font-size:16px;font-weight:500}
 .medical-text-block{padding:18px 20px;margin:12px 0;border:1px solid var(--border);border-radius:18px;background:var(--paper)}.medical-text-block>summary{cursor:pointer;font-weight:500;color:var(--ink)}.medical-text-block h3{font-size:22px;margin:0 0 12px}.medical-text-body p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.65;color:var(--ink)}.medical-text-body p:last-child{margin-bottom:0}#medicalTextBlocks>p{font-size:14px}
 </style><style id="chemistry-mobile">@media(max-width:700px){.chemistry-summary{min-width:0;table-layout:fixed;font-size:12px}.chemistry-summary th,.chemistry-summary td{padding:10px 6px;min-width:0!important;max-width:none!important;overflow-wrap:anywhere}.chemistry-summary th:first-child{width:37%}.chemistry-summary strong{font-size:16px}.chemistry-summary small{font-size:10.5px;line-height:1.45}.chemistry-summary thead th{font-size:11px}}</style><style id="thematic-explanations">
@@ -257,7 +257,7 @@ button:hover{filter:brightness(.96)}
 <div class="reference-warning"><strong>Требуют внимания / контроля</strong><div id="overviewAttention">Загружаем…</div></div>
 <div class="reference-note"><strong>В пределах лабораторных референсов</strong><div id="overviewNormal">Загружаем…</div></div>
 <div id="overviewSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="hormonesSection">Гормоны</div><div id="hormoneCharts" class="reference-section-charts"></div><div id="hormonesOverview" class="reference-panel"></div>
-<div id="hormonesSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="hematologySection">Гематология</div><div id="hematologyOverview" class="reference-panel"></div><div class="reference-section-charts" id="hematologyCharts"></div>
+<div id="hormonesSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="hematologySection">Гематология</div><div class="reference-section-charts" id="hematologyCharts"></div><div id="hematologyOverview" class="reference-panel"></div>
 <div id="hematologySectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="chemistrySection">Биохимия и другие исследования</div><div id="chemistryOverview" class="reference-panel"></div>
 <div id="chemistrySectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="markersSection">Маркеры</div><div id="markersOverview" class="reference-panel"><p>Доступные маркеры из лабораторных результатов появятся здесь.</p></div>
 <div id="markersSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="protocolSection">Протокол</div><div id="protocolOverview" class="reference-panel"><div class="reference-empty">Загружаем назначения…</div></div><div id="protocolNotes" class="protocol-notes"><div class="reference-empty">Загружаем историю изменений схемы…</div></div>
@@ -417,8 +417,8 @@ function buildChemistrySeries(items,sortByHistory=false){
   for(const item of items){const row=item.latest,key=row.name.toLocaleLowerCase('ru')+'|'+String(row.unit||'').trim().toLocaleLowerCase('ru');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);}
   return [...groups.values()].map(rows=>rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).sort((a,b)=>(sortByHistory?b.length-a.length:0)||a[0].name.localeCompare(b[0].name,'ru'));
 }
-function renderLabHistoryTable(host,items,results,dates,labs,sectionName){
-  const series=buildChemistrySeries(items,sectionName==='Гормоны');
+function renderLabHistoryTable(host,items,results,dates,labs,sectionName,sortByHistory=false){
+  const series=buildChemistrySeries(items,sortByHistory);
   text(host,'p','Три последних результата каждого показателя. Дата указана в каждой ячейке.','chemistry-caption');
   function tableInto(parent,label,headers){const wrap=text(parent,'div','','medical-table-wrap'),table=text(wrap,'table','','medical-results-table');table.setAttribute('aria-label',label);const head=text(text(table,'thead',''),'tr','');for(const title of headers){const cell=text(head,'th',title);cell.scope='col';}return text(table,'tbody','');}
   function resultInto(cell,row,showDate=true){
@@ -803,18 +803,17 @@ listInto('overviewAttention',attention,'Среди четырёх ключевы
 listInto('overviewNormal',normal,'Нет ключевых показателей с указанным референсом внутри интервала.');
 const groups=[
 {id:'markersOverview',match:n=>/пса|онкомаркер|с[- ]реактивн|срб|гомоцистеин|витамин|железо|трансферрин|фолиев|nt-probnp|рэа|цинк|ферритин/.test(n)},
-{id:'hormonesOverview',match:n=>/тестостерон|эстрадиол|пролактин|лютеинизир|лг|фсг|гспг|дгэа|кортизол|кортизон|кортикостер|кортикостерон|прогестерон|прегненолон|андростендион|дегидроэпиандростерон|инсулин|лептин|андроген|индекс своб|^ист(?:\s|$)|птг|паратгормон|тиреотроп|т4|т3/.test(n)},
-{id:'hematologyOverview',match:n=>/гематокрит|гемоглобин|эритроцит|тромбоцит|лейкоцит|нейтрофил|эозинофил|базофил|моноцит|лимфоцит|соэ|mcv|mch|rdw|mpv|pdw|pct/.test(n)},
-{id:'chemistryOverview',match:n=>true}];
+{id:'hormonesOverview',tableName:'Гормоны',sortByHistory:true,match:n=>/тестостерон|эстрадиол|пролактин|лютеинизир|лг|фсг|гспг|дгэа|кортизол|кортизон|кортикостер|кортикостерон|прогестерон|прегненолон|андростендион|дегидроэпиандростерон|инсулин|лептин|андроген|индекс своб|^ист(?:\s|$)|птг|паратгормон|тиреотроп|т4|т3/.test(n)},
+{id:'hematologyOverview',tableName:'Гематология',sortByHistory:true,match:n=>/гематокрит|гемоглобин|эритроцит|тромбоцит|лейкоцит|нейтрофил|эозинофил|базофил|моноцит|лимфоцит|соэ|mcv|mch|rdw|mpv|pdw|pct/.test(n)},
+{id:'chemistryOverview',tableName:'Биохимия',match:n=>true}];
 const labsById=new Map(reports.map(r=>[r.id,r.lab_name]));
 const byName=new Map();
 for(const x of results){const date=dated.get(x.report_id)||'';const name=canonicalAnalyteName(x.analyte_name||x.analyte_code||'Показатель');const key=name.toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z0-9%]+/g,' ').trim()+'|'+String(x.unit||'').trim().toLowerCase();if(!byName.has(key))byName.set(key,[]);byName.get(key).push({...x,date,name})}
 const items=[...byName.values()].flatMap(points=>{points.sort((a,b)=>a.date.localeCompare(b.date));return points.map(result=>({latest:result,points}))});
 for(const g of groups){const target=e(g.id);target.replaceChildren();target.classList.remove('hidden');const subset=items.filter(item=>{const name=item.latest.name.toLowerCase();return g.id==='chemistryOverview'?!groups.slice(0,3).some(group=>group.match(name)):g.match(name)});
 if(!subset.length){text(target,'p','Пока нет доступных результатов.');continue}
-if(g.id==='chemistryOverview'||g.id==='hormonesOverview'){
-  const sectionName=g.id==='hormonesOverview'?'Гормоны':'Биохимия';
-  renderLabHistoryTable(target,subset,results,dated,labsById,sectionName);
+if(g.tableName){
+  renderLabHistoryTable(target,subset,results,dated,labsById,g.tableName,g.sortByHistory);
   continue;
 }
 const ordered=[...subset].sort((a,b)=>
