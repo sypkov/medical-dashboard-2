@@ -365,7 +365,7 @@ test('Markers use tables and protocol reveals seven completed and two planned in
     await expect(table.locator('tbody tr')).toHaveCount(9);
     await expect(table.locator('tbody tr.protocol-planned')).toHaveCount(2);
     await expect(table.locator('tbody tr td:first-child')).toHaveText(['22.11.2026','24.11.2026','10.11.2026','09.11.2026','08.11.2026','07.11.2026','06.11.2026','05.11.2026','04.11.2026']);
-    const more=table.locator('xpath=ancestor::section').locator('details.protocol-more');
+    const more=table.locator('xpath=ancestor::section[1]').locator('details.protocol-more');
     await expect(more).not.toHaveAttribute('open');
     await more.locator('summary').click();
     await expect(more.locator('tbody tr')).toHaveCount(4);
