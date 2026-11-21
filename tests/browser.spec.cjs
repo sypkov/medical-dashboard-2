@@ -12,13 +12,18 @@ test('Chart periods filter real measurements and mild elevation is yellow', asyn
     if(url.includes('/auth/v1/token'))body={access_token:'synthetic-period-token',refresh_token:'synthetic-refresh',expires_at:Math.floor(Date.now()/1000)+3600,user:{id:'synthetic-period-user'}};
     else if(url.includes('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222',role:'owner'}];
     else if(url.includes('/md_lab_reports'))body=dates.map((date,i)=>({id:ids[i],sample_date:date,report_date:date,lab_name:'Тестовая лаборатория'}));
-    else if(url.includes('/md_lab_results'))body=dates.map((_,i)=>({report_id:ids[i],analyte_name:'Тестостерон общий',numeric_value:i===3?20:19,unit:'нмоль/л',ref_low:10,ref_high:19.6}));
+    else if(url.includes('/md_lab_results'))body=dates.map((_,i)=>({report_id:ids[i],analyte_name:'Тестостерон общий',numeric_value:[25,9,19,20][i],unit:'нмоль/л',ref_low:10,ref_high:19.6}));
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto('http://127.0.0.1:8765/');
   await page.locator('#email').fill('periods@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
   const chart=page.locator('#hormoneCharts .hematology-chart-card').first();
   await expect(chart.locator('.chart-point')).toHaveCount(4);
+  await expect(chart.locator('.medical-reference-gradient stop')).toHaveCount(8);
+  expect(await chart.locator('.chart-point').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('fill')))).toEqual(['#b96243','#b96243','#397b64','#a17b13']);
+  const smallCard=page.locator('#hormonesOverview .data-row.mild').first();
+  await expect(smallCard.locator('polyline')).toHaveAttribute('stroke','#a17b13');
+  await expect(smallCard.locator('strong')).toHaveCSS('color','rgb(161, 123, 19)');
   await expect(chart.locator('.chart-status')).toHaveCSS('background-color','rgb(255, 242, 189)');
   await expect(page.locator('#overviewMetrics .metric.mild .result-badge')).toHaveCSS('background-color','rgb(255, 242, 189)');
   const mild=page.locator('#hormonesOverview .data-row.mild').first();
@@ -121,7 +126,7 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await expect(page.locator('#overviewMetrics .metric').nth(1)).toContainText('немного выше');
   await expect(page.locator('#hormonesOverview .data-row').filter({hasText:'Тестостерон общий'}).first()).toContainText('Немного выше референса');
   await expect(page.locator('#hormoneCharts svg').first().locator('.chart-axis')).toHaveCount(6);
-  await expect(page.locator('#hormoneCharts .medical-curve').first()).toHaveAttribute('stroke','#397b64');
+  await expect(page.locator('#hormoneCharts .medical-curve').first()).toHaveAttribute('stroke',/^url\(#medical-reference-/);
   const hormoneChart=page.locator('#hormoneCharts .medical-chart').first();
   await hormoneChart.locator('.medical-curve').click();
   await expect(hormoneChart.locator('[role=tooltip]')).toBeVisible();
