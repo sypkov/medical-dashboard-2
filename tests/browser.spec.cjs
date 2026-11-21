@@ -54,13 +54,18 @@ test('Chart periods filter real measurements and mild elevation is yellow', asyn
   await expect(chart.locator('.chart-point')).toHaveCount(4);
   await expect(chart.locator('.medical-reference-gradient stop')).toHaveCount(8);
   expect(await chart.locator('.chart-point').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('fill')))).toEqual(['#b96243','#b96243','#397b64','#a17b13']);
-  const smallCard=page.locator('#hormonesOverview .data-row.mild').first();
-  await expect(smallCard.locator('polyline')).toHaveAttribute('stroke','#a17b13');
-  await expect(smallCard.locator('strong')).toHaveCSS('color','rgb(161, 123, 19)');
+  const summary=page.getByRole('table',{name:'Гормоны — три последних результата',exact:true});
+  await expect(summary.locator('tbody td strong')).toHaveText(['20','19','9']);
+  await expect(summary.locator('tbody td').first()).toHaveAttribute('title','Немного выше референса');
+  await expect(summary.locator('tbody td strong').first()).toHaveCSS('color','rgb(161, 123, 19)');
+  const history=page.locator('#hormonesOverview details');
+  await expect(history).not.toHaveAttribute('open');
+  await history.locator('summary').click();
+  const all=page.getByRole('table',{name:'Гормоны — полная хронология',exact:true});
+  await expect(all.locator('tbody tr td:first-child')).toHaveText(['10.11.2026','10.10.2026','10.07.2026','10.01.2026']);
   await expect(chart.locator('.chart-status')).toHaveCSS('background-color','rgb(255, 242, 189)');
   await expect(page.locator('#overviewMetrics .metric.mild .result-badge')).toHaveCSS('background-color','rgb(255, 242, 189)');
-  const mild=page.locator('#hormonesOverview .data-row.mild').first();
-  await expect(mild).toHaveCSS('border-top-color','rgb(215, 183, 78)');
+
   await chart.getByRole('button',{name:'6 мес',exact:true}).click();await expect(chart.locator('.chart-point')).toHaveCount(3);
   await chart.getByRole('button',{name:'3 мес',exact:true}).click();await expect(chart.locator('.chart-point')).toHaveCount(2);
   await expect(chart.getByRole('button',{name:'3 мес',exact:true})).toHaveAttribute('aria-pressed','true');
@@ -157,7 +162,7 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await expect(page.locator('#hormoneCharts svg')).toHaveCount(2);
   await expect(page.locator('#hormoneCharts .chart-status').first()).toHaveText('немного выше');
   await expect(page.locator('#overviewMetrics .metric').nth(1)).toContainText('немного выше');
-  await expect(page.locator('#hormonesOverview .data-row').filter({hasText:'Тестостерон общий'}).first()).toContainText('Немного выше референса');
+  await expect(page.locator('#hormonesOverview tbody tr').filter({hasText:'Тестостерон общий'}).first().locator('td').first()).toHaveAttribute('title','Немного выше референса');
   await expect(page.locator('#hormoneCharts svg').first().locator('.chart-axis')).toHaveCount(6);
   await expect(page.locator('#hormoneCharts .medical-curve').first()).toHaveAttribute('stroke',/^url\(#medical-reference-/);
   const hormoneChart=page.locator('#hormoneCharts .medical-chart').first();
