@@ -35,6 +35,18 @@ const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', '
 const sandbox = vm.createContext({});
 vm.runInContext(names.map(extractFunction).join('\n'), sandbox);
 
+test('mixed interpretations split into the matching existing sections', () => {
+  const state=vm.createContext({});vm.runInContext(extractFunction('interpretationSections'),state);
+  const blocks=state.interpretationSections({title:'Анализы от 19.11.2026',body:'Гематокрит 49,8%. Общий тестостерон 32,28. MPV 12,2. Это аналитическая заметка, не диагноз.'});
+  assert.equal(blocks.length,2);
+  const hormones=blocks.find(block=>block.section==='hormones');
+  const hematology=blocks.find(block=>block.section==='hematology');
+  assert.ok(hormones.paragraphs.some(runs=>runs[0].text.includes('тестостерон')));
+  assert.ok(hematology.paragraphs.some(runs=>runs[0].text.includes('Гематокрит')));
+  assert.ok(!hormones.paragraphs.some(runs=>runs[0].text.includes('Гематокрит')));
+  assert.equal(hormones.as_of,'2026-11-19');
+});
+
 test('historic cards use the latest real reference with compatible units', () => {
   const state=vm.createContext({});
   vm.runInContext(['canonicalAnalyteName','canonicalBloodCountUnit','trendMedicalValue','usableReferenceText','latestKnownReference','medicalReferenceText','buildChemistrySeries'].map(extractFunction).join('\n'),state);
