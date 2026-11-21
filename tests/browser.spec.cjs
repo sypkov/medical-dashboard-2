@@ -4,6 +4,32 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://*.supabase.co/**', route => route.abort());
 });
 
+test('Chemistry tables retain all measurements and text blocks are available', async ({ page }) => {
+  const dates=['2026-01-10','2026-07-10','2026-10-10','2026-11-10'];
+  const ids=dates.map((_,i)=>'11111111-1111-4111-8111-11111111111'+i);
+  await page.route('https://*.supabase.co/**',async route=>{
+    const url=route.request().url();let body=[];
+    if(url.includes('/auth/v1/token'))body={access_token:'synthetic-chem-token',refresh_token:'synthetic-refresh',expires_at:Math.floor(Date.now()/1000)+3600,user:{id:'synthetic-chem-user'}};
+    else if(url.includes('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222',role:'owner'}];
+    else if(url.includes('/md_lab_reports'))body=dates.map((date,i)=>({id:ids[i],sample_date:date,report_date:date,lab_name:'Тестовая лаборатория'}));
+    else if(url.includes('/md_lab_results'))body=dates.map((_,i)=>({report_id:ids[i],analyte_name:'Глюкоза',numeric_value:[5,5.8,6.2,6.1][i],unit:'ммоль/л',...(i===3?{ref_low:4,ref_high:6}:{reference_text:'Исторический дашборд; референсы из старого HTML'})}));
+    else if(url.includes('/md_content_blocks')&&url.includes('kind=in.'))body=[{kind:'interpretation',title:'Интерпретация тестового анализа',body:'Полный текст интерпретации.'},{kind:'source_archive',title:'Историческая запись',body:'Полный текст исторического блока.'}];
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('http://127.0.0.1:8765/');await page.locator('#email').fill('chemistry@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
+  const table=page.getByRole('table',{name:'Биохимия — три последних результата',exact:true});
+  await expect(table.locator('tbody tr')).toHaveCount(1);
+  await expect(table.locator('tbody td strong')).toHaveText(['6,1','6,2','5,8']);
+  await expect(table).toContainText('Референс: 4–6 ммоль/л');
+  await expect(page.locator('#chemistryOverview')).not.toContainText('старого HTML');
+  await expect(page.locator('#chemistryOverview .data-row')).toHaveCount(0);
+  const history=page.locator('.chemistry-history');await expect(history).not.toHaveAttribute('open');await history.locator('summary').click();
+  await expect(page.getByRole('table',{name:'Биохимия — полная хронология',exact:true}).locator('tbody tr')).toHaveCount(4);
+  await expect(page.locator('#medicalTextBlocks')).toContainText('Полный текст интерпретации.');
+  await page.locator('#medicalTextBlocks summary').click();await expect(page.locator('#medicalTextBlocks')).toContainText('Полный текст исторического блока.');
+  await page.locator('#journalMenuButton').click();await page.locator('#accountLogout').click();await expect(page.locator('#medicalTextBlocks')).toBeEmpty();
+});
+
 test('Chart periods filter real measurements and mild elevation is yellow', async ({ page }) => {
   const dates=['2026-01-10','2026-07-10','2026-10-10','2026-11-10'];
   const ids=dates.map((_,i)=>'11111111-1111-4111-8111-11111111111'+i);
