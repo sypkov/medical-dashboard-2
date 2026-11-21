@@ -51,7 +51,7 @@ test('chart periods use calendar months and include the boundary measurement', (
 
 test('mild elevation includes exactly 5 percent of interval width', () => {
   const state=vm.createContext({});
-  vm.runInContext(extractFunction('medicalReferenceLabel'),state);
+  vm.runInContext(['medicalMildFraction','medicalReferenceLabel','medicalReferenceColor','medicalReferenceColorStops'].map(extractFunction).join('\n'),state);
   const label=state.medicalReferenceLabel;
   assert.equal(label(6.1,4,6,true),'немного выше');
   assert.equal(label(6.2,4,6,true),'выше');
@@ -67,6 +67,17 @@ test('mild elevation includes exactly 5 percent of interval width', () => {
   assert.equal(label(6.01,6,6,true),'выше');
   assert.equal(label(null,4,6,true),'нет оценки');
   assert.equal(label(6,null,null,true),'нет референса');
+  assert.equal(label(32.28,8.33,30.19,true,'Тестостерон общий'),'немного выше');
+  assert.equal(label(6.2,4,6,true,'Тестостерон общий'),'немного выше');
+  assert.equal(label(6.200001,4,6,true,'Тестостерон общий'),'выше');
+  assert.equal(label(6.2,4,6,true,'Тестостерон свободный'),'выше');
+  const stops=state.medicalReferenceColorStops(3,7,4,6,'Тестостерон общий');
+  assert.deepEqual(Array.from(stops,x=>x.color),['#b96243','#b96243','#a17b13','#a17b13','#397b64','#397b64','#b96243','#b96243']);
+  assert.equal(stops[1].offset,stops[2].offset);
+  assert.ok(Math.abs(stops[1].offset-0.2)<1e-12);
+  assert.equal(stops[3].offset,0.25);
+  assert.equal(state.medicalReferenceColor(6.1,4,6),'#a17b13');
+  assert.equal(state.medicalReferenceColor(6.2,4,6),'#b96243');
 });
 
 test('profile lookup failure is visible, retryable and makes no medical requests', async () => {
