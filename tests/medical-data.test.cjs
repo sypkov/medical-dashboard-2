@@ -381,3 +381,19 @@ test('smooth curves pass through measured points without exceeding adjacent valu
   assert.ok(!/NaN|Infinity/.test(state.medicalSmoothPath([{x:0,y:1},{x:0,y:2},{x:1,y:3}])));
 });
 
+
+test('hormones sort by history count while chemistry keeps alphabetical order',()=>{
+  const build=new Function(extractFunction('buildChemistrySeries')+';return buildChemistrySeries;')();
+  const items=[
+    {latest:{name:'А',unit:'',date:'2026-11-19'}},
+    {latest:{name:'Б',unit:'',date:'2026-11-19'}},
+    {latest:{name:'Б',unit:'',date:'2026-11-12'}},
+    {latest:{name:'В',unit:'',date:'2026-11-19'}},
+    {latest:{name:'В',unit:'',date:'2026-11-12'}},
+    {latest:{name:'В',unit:'',date:'2026-11-05'}},
+    {latest:{name:'Г',unit:'',date:'2026-11-19'}}
+  ];
+  assert.deepEqual(build(items,true).map(rows=>rows[0].name),['В','Б','А','Г']);
+  assert.deepEqual(build(items).map(rows=>rows[0].name),['А','Б','В','Г']);
+  assert.deepEqual(build(items,true)[0].map(row=>row.date),['2026-11-19','2026-11-12','2026-11-05']);
+});
