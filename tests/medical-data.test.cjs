@@ -35,6 +35,20 @@ const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', '
 const sandbox = vm.createContext({});
 vm.runInContext(names.map(extractFunction).join('\n'), sandbox);
 
+test('chart periods use calendar months and include the boundary measurement', () => {
+  const state=vm.createContext({});
+  vm.runInContext(['validLabDate','medicalPeriodCutoff','filterMedicalPeriod'].map(extractFunction).join('\n'),state);
+  assert.equal(state.medicalPeriodCutoff('2026-11-19','3'),'2026-08-19');
+  assert.equal(state.medicalPeriodCutoff('2026-11-19','6'),'2026-05-19');
+  assert.equal(state.medicalPeriodCutoff('2026-05-31','3'),'2026-02-28');
+  assert.equal(state.medicalPeriodCutoff('2024-05-31','3'),'2024-02-29');
+  const points=['2026-05-18','2026-05-19','2026-08-18','2026-08-19','2026-11-19'].map(date=>({date}));
+  assert.equal(state.filterMedicalPeriod(points,'all').length,5);
+  assert.equal(state.filterMedicalPeriod(points,'6').length,4);
+  assert.equal(state.filterMedicalPeriod(points,'3').length,2);
+  assert.equal(points.length,5);
+});
+
 test('mild elevation includes exactly 5 percent of interval width', () => {
   const state=vm.createContext({});
   vm.runInContext(extractFunction('medicalReferenceLabel'),state);
