@@ -35,6 +35,26 @@ const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', '
 const sandbox = vm.createContext({});
 vm.runInContext(names.map(extractFunction).join('\n'), sandbox);
 
+test('mild elevation includes exactly 5 percent of interval width', () => {
+  const state=vm.createContext({});
+  vm.runInContext(extractFunction('medicalReferenceLabel'),state);
+  const label=state.medicalReferenceLabel;
+  assert.equal(label(6.1,4,6,true),'немного выше');
+  assert.equal(label(6.2,4,6,true),'выше');
+  assert.equal(label(6.100001,4,6,true),'выше');
+  assert.equal(label(6,4,6,true),'норма');
+  assert.equal(label(4,4,6,true),'норма');
+  assert.equal(label(3.99,4,6,true),'ниже');
+  assert.equal(label(49.8,40,49.4),'Немного выше референса');
+  assert.equal(label(32.28,8.33,30.19),'Выше референса');
+  assert.equal(label(0.0051,0.004,0.005,true),'выше');
+  assert.equal(label(0.00505,0.004,0.005,true),'немного выше');
+  assert.equal(label(6.01,null,6,true),'выше');
+  assert.equal(label(6.01,6,6,true),'выше');
+  assert.equal(label(null,4,6,true),'нет оценки');
+  assert.equal(label(6,null,null,true),'нет референса');
+});
+
 test('profile lookup failure is visible, retryable and makes no medical requests', async () => {
   const controls = new Map();
   const calls = [];
@@ -307,3 +327,4 @@ test('smooth curves pass through measured points without exceeding adjacent valu
   assert.equal(state.medicalSmoothPath([{x:0,y:0}]),'M 0 0');
   assert.ok(!/NaN|Infinity/.test(state.medicalSmoothPath([{x:0,y:1},{x:0,y:2},{x:1,y:3}])));
 });
+
