@@ -237,7 +237,7 @@ button:hover{filter:brightness(.96)}
 .chart-period-toolbar button.active{background:var(--green-soft);color:#275e4b;border-color:#b8d0c1;font-weight:500}
 .chart-period-toolbar button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style><style id="reference-line-colors">#overview .reference-panel .data-row.mild>strong{color:var(--mild-line)!important}.reference-color-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;margin:8px 0}.reference-color-legend span{white-space:nowrap}</style><style id="chemistry-tables-and-text">
-#chemistryOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
+#chemistryOverview,#hormonesOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
 .medical-results-table{width:100%;min-width:610px;border-collapse:collapse;font-size:14px}.medical-results-table th,.medical-results-table td{text-align:left;padding:13px 14px;vertical-align:top;border-bottom:1px solid var(--border)}.medical-results-table thead th{font-weight:500;color:var(--muted);background:#eeece3}.medical-results-table tbody th{font-weight:500;min-width:200px;max-width:260px}.medical-results-table tbody td{min-width:125px}.medical-results-table tr:last-child>*{border-bottom:0}.medical-results-table small{display:block;font-size:12px;font-weight:400;margin-top:5px}.medical-results-table strong{font-size:18px;font-weight:500}.chemistry-history{margin:22px 0}.chemistry-history>summary{cursor:pointer;color:var(--green);font-size:16px;font-weight:500}
 .medical-text-block{padding:18px 20px;margin:12px 0;border:1px solid var(--border);border-radius:18px;background:var(--paper)}.medical-text-block>summary{cursor:pointer;font-weight:500;color:var(--ink)}.medical-text-block h3{font-size:22px;margin:0 0 12px}.medical-text-body p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.65;color:var(--ink)}.medical-text-body p:last-child{margin-bottom:0}#medicalTextBlocks>p{font-size:14px}
 </style><style id="chemistry-mobile">@media(max-width:700px){.chemistry-summary{min-width:0;table-layout:fixed;font-size:12px}.chemistry-summary th,.chemistry-summary td{padding:10px 6px;min-width:0!important;max-width:none!important;overflow-wrap:anywhere}.chemistry-summary th:first-child{width:37%}.chemistry-summary strong{font-size:16px}.chemistry-summary small{font-size:10.5px;line-height:1.45}.chemistry-summary thead th{font-size:11px}}</style><style id="thematic-explanations">
@@ -417,7 +417,7 @@ function buildChemistrySeries(items){
   for(const item of items){const row=item.latest,key=row.name.toLocaleLowerCase('ru')+'|'+String(row.unit||'').trim().toLocaleLowerCase('ru');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);}
   return [...groups.values()].map(rows=>rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).sort((a,b)=>a[0].name.localeCompare(b[0].name,'ru'));
 }
-function renderChemistryTable(host,items,results,dates,labs){
+function renderLabHistoryTable(host,items,results,dates,labs,sectionName){
   const series=buildChemistrySeries(items);
   text(host,'p','Три последних результата каждого показателя. Дата указана в каждой ячейке.','chemistry-caption');
   function tableInto(parent,label,headers){const wrap=text(parent,'div','','medical-table-wrap'),table=text(wrap,'table','','medical-results-table');table.setAttribute('aria-label',label);const head=text(text(table,'thead',''),'tr','');for(const title of headers){const cell=text(head,'th',title);cell.scope='col';}return text(table,'tbody','');}
@@ -429,10 +429,10 @@ function renderChemistryTable(host,items,results,dates,labs){
     if(!row.date&&labs.get(row.report_id))text(cell,'small',labs.get(row.report_id));
     if(row.numeric_value!==null&&row.numeric_value!==undefined)cell.title=medicalReferenceLabel(row.numeric_value,ref.low,ref.high,false,row.name);
   }
-  const body=tableInto(host,'Биохимия — три последних результата',['Показатель','Последний','Пред.','Ранее']);body.closest('table').classList.add('chemistry-summary');
+  const body=tableInto(host,sectionName+' — три последних результата',['Показатель','Последний','Пред.','Ранее']);body.closest('table').classList.add('chemistry-summary');
   for(const rows of series){const row=rows[0],tr=text(body,'tr',''),name=text(tr,'th','');name.scope='row';text(name,'span',row.name);text(name,'small',row.unit||'');text(name,'small','Референс: '+medicalReferenceText(latestKnownReference(row,results,dates),row.unit));for(let i=0;i<3;i++)resultInto(text(tr,'td',''),rows[i]);}
   const history=text(host,'details','','chemistry-history');text(history,'summary','Все измерения · '+items.length);
-  const allBody=tableInto(history,'Биохимия — полная хронология',['Дата','Показатель','Результат','Референс']);
+  const allBody=tableInto(history,sectionName+' — полная хронология',['Дата','Показатель','Результат','Референс']);
   const ordered=items.map(item=>item.latest).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||a.name.localeCompare(b.name,'ru'));
   for(const row of ordered){const tr=text(allBody,'tr','');text(tr,'td',row.date?displayMedicalDate(row.date):'Без точной даты');text(tr,'td',row.name);const cell=text(tr,'td','');resultInto(cell,row,false);text(cell,'small',row.unit||'');text(tr,'td',medicalReferenceText(latestKnownReference(row,results,dates),row.unit));}
 }
@@ -812,19 +812,22 @@ for(const x of results){const date=dated.get(x.report_id)||'';const name=canonic
 const items=[...byName.values()].flatMap(points=>{points.sort((a,b)=>a.date.localeCompare(b.date));return points.map(result=>({latest:result,points}))});
 for(const g of groups){const target=e(g.id);target.replaceChildren();target.classList.remove('hidden');const subset=items.filter(item=>{const name=item.latest.name.toLowerCase();return g.id==='chemistryOverview'?!groups.slice(0,3).some(group=>group.match(name)):g.match(name)});
 if(!subset.length){text(target,'p','Пока нет доступных результатов.');continue}
-if(g.id==='chemistryOverview'){renderChemistryTable(target,subset,results,dated,labsById);continue}
+if(g.id==='chemistryOverview'||g.id==='hormonesOverview'){
+  const sectionName=g.id==='hormonesOverview'?'Гормоны':'Биохимия';
+  renderLabHistoryTable(target,subset,results,dated,labsById,sectionName);
+  continue;
+}
 const ordered=[...subset].sort((a,b)=>
   b.latest.date.localeCompare(a.latest.date)||a.latest.name.localeCompare(b.latest.name,'ru')
 );
 let previousDate=null;
-let displayedRows=0;for(const item of ordered){const x=item.latest;displayedRows++;if(x.date!==previousDate){text(target,'h3',x.date?displayMedicalDate(x.date):'Без точной даты','lab-date-heading');previousDate=x.date}const row=text(target,'div','','data-row');text(row,'span',x.name,'card-label');
+for(const item of ordered){const x=item.latest;if(x.date!==previousDate){text(target,'h3',x.date?displayMedicalDate(x.date):'Без точной даты','lab-date-heading');previousDate=x.date}const row=text(target,'div','','data-row');text(row,'span',x.name,'card-label');
 const knownReference=latestKnownReference(x,results,dated);const lo=knownReference.low,hi=knownReference.high,n=Number(x.numeric_value);const validNumber=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v));const hasNumeric=validNumber(x.numeric_value);const low=validNumber(lo),high=validNumber(hi);const abnormal=hasNumeric&&((low&&n<Number(lo))||(high&&n>Number(hi)));
 const resultColor=medicalReferenceColor(x.numeric_value,lo,hi,x.name);const value=text(row,'strong',String(x.numeric_value??x.text_value??'—').replace('.',',')+' '+(x.unit||''));if(hasNumeric)value.style.color=resultColor;if(abnormal){row.classList.add('abnormal');markMildReference(row,n,lo,hi,x.name);text(row,'span',(low&&n<Number(lo)?'↓ ':'↑ ')+medicalReferenceLabel(n,lo,hi,false,x.name),'flag flag-high')}
 text(row,'span','Референс: '+medicalReferenceText(knownReference,x.unit||''),'ref');
 const points=item.points.filter(p=>p.date<=x.date&&p.numeric_value!==null&&p.numeric_value!==undefined&&String(p.numeric_value).trim()!==''&&validLabDate(p.date)&&Number.isFinite(Number(p.numeric_value)));
 if(points.length>=2){const values=points.map(p=>Number(p.numeric_value)),min=Math.min(...values),max=Math.max(...values),span=max-min||1;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 160 32');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика '+x.name);svg.classList.add('sparkline');const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');const firstDay=Date.parse(points[0].date+'T00:00:00Z'),lastDay=Date.parse(points[points.length-1].date+'T00:00:00Z');line.setAttribute('points',points.map(p=>(firstDay===lastDay?80:3+154*(Date.parse(p.date+'T00:00:00Z')-firstDay)/(lastDay-firstDay))+','+(28-(Number(p.numeric_value)-min)/span*24)).join(' '));line.setAttribute('fill','none');line.setAttribute('stroke',resultColor);line.setAttribute('stroke-width','2');svg.append(line);row.append(svg)}
 text(row,'span',displayMedicalDate(x.date),'date');if(!x.date)text(row,'span',labsById.get(x.report_id)||'Источник не указан','date-source')}
-target.classList.toggle('hidden',g.id==='hormonesOverview'&&displayedRows===0);
 }
 e('overviewStatus').textContent='Последние лабораторные результаты · '+reports.length+' отчётов · '+results.length+' показателей';
 }
