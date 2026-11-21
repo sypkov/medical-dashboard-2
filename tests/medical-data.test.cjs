@@ -35,6 +35,22 @@ const names = ['validLabDate', 'canonicalBloodCountUnit', 'trendMedicalValue', '
 const sandbox = vm.createContext({});
 vm.runInContext(names.map(extractFunction).join('\n'), sandbox);
 
+test('historic cards use the latest real reference with compatible units', () => {
+  const state=vm.createContext({});
+  vm.runInContext(['canonicalAnalyteName','canonicalBloodCountUnit','trendMedicalValue','usableReferenceText','latestKnownReference','medicalReferenceText','buildChemistrySeries'].map(extractFunction).join('\n'),state);
+  const dates=new Map([['old','2025-01-01'],['new','2026-11-19']]);
+  const historic={report_id:'old',analyte_name:'Гемоглобин',unit:'г/дл',reference_text:'Исторический дашборд; референсы из старого HTML'};
+  const latest={report_id:'new',analyte_name:'Гемоглобин',unit:'г/л',ref_low:135,ref_high:169};
+  const ref=state.latestKnownReference(historic,[historic,latest],dates);
+  assert.equal(ref.low,13.5);assert.ok(Math.abs(ref.high-16.9)<1e-12);
+  assert.equal(state.medicalReferenceText(ref,'г/дл'),'13,5–16,9 г/дл');
+  assert.equal(state.latestKnownReference(historic,[historic],dates).text,'');
+  const items=['2026-01-01','2026-11-01','2026-05-01',''].map((date,i)=>({latest:{name:'Глюкоза',date,numeric_value:i,unit:'ммоль/л'}}));
+  const grouped=state.buildChemistrySeries(items);
+  assert.equal(grouped.length,1);assert.equal(grouped[0].length,4);
+  assert.deepEqual(Array.from(grouped[0],row=>row.date),['2026-11-01','2026-05-01','2026-01-01','']);
+});
+
 test('chart periods use calendar months and include the boundary measurement', () => {
   const state=vm.createContext({});
   vm.runInContext(['validLabDate','medicalPeriodCutoff','filterMedicalPeriod'].map(extractFunction).join('\n'),state);
