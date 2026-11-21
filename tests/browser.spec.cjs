@@ -50,6 +50,7 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
       status: 200, contentType: 'application/json',
       body: JSON.stringify([{ patient_id: '22222222-2222-4222-8222-222222222222', role: 'owner' }])
     });
+    if (url.includes('/rest/v1/md_content_blocks') && url.includes('eq.patient_profile')) return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{body:JSON.stringify({display_name:'Иванов Иван Иванович',birth_date:'1980-06-16'})}])});
     if (url.includes('/rest/v1/md_lab_reports')) return route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify([{ id: fakeReport, lab_name: 'Тестовая лаборатория',
@@ -74,6 +75,13 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await page.locator('#login').click();
   await expect(page.locator('#overview')).toBeVisible();
   await expect(page.locator('#labsList')).toContainText('Глюкоза', { timeout: 15000 });
+  await expect(page.locator('#patientDisplayName')).toHaveText('Иванов Иван Иванович');
+  await expect(page.locator('#patientMetadata')).toContainText('16.06.1980');
+  await expect(page.locator('#accountBar')).toBeHidden();
+  await page.locator('#journalSearch').fill('глюк');
+  await page.locator('#journalSearchResults').getByRole('button',{name:'Глюкоза',exact:true}).click();
+  await expect(page.locator('#labsFilter')).toHaveValue('Глюкоза');
+  await page.locator('#labsFilter').fill('');
   await page.locator('#labsList details').first().evaluate(el => { el.open = true; });
   await expect(page.locator('#labsList .row').first()).toContainText('5.2');
   const basophils = page.locator('#hematologyOverview .data-row').filter({hasText:'Базофилы %'});
@@ -121,10 +129,14 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
   await page.locator('#sourceArchive summary').first().click();
   await expect(page.locator('#archiveContent')).toContainText('Архив недоступен для этого аккаунта.');
+  await page.locator('#journalMenuButton').click();
+  await expect(page.locator('#accountBar')).toBeVisible();
   await page.locator('#accountLogout').click();
   await expect(page.locator('#overview')).toBeHidden();
   await expect(page.locator('#labsList')).toBeEmpty();
   await expect(page.locator('#archiveContent')).toBeEmpty();
+  await expect(page.locator('#patientDisplayName')).toHaveText('Медицинский профиль');
+  await expect(page.locator('#journalInitials')).toBeEmpty();
   await expect(page.locator('#bloodPressureChart')).toBeEmpty();
   await expect(page.locator('#sourceArchive')).not.toHaveAttribute('open');
 });
@@ -226,6 +238,8 @@ test('Mobile diary, protocol, archive and scrolling work together', async ({ pag
   await page.getByRole('link',{name:'Все анализы',exact:true}).click();
   await page.locator('#sourceArchive > summary').click();
   await expect(page.locator('#archiveContent')).toContainText('Синтетическая архивная запись');
+  await page.locator('#journalMenuButton').click();
+  await expect(page.locator('#accountBar')).toBeVisible();
   await page.locator('#accountLogout').click();
   await expect(page.locator('#overview')).toBeHidden();
   for (const id of ['protocolOverview','bloodPressureChart','pulseChartNew','archiveContent','diarySyncStatus']) {
@@ -247,3 +261,4 @@ test('Journal design uses the supplied warm palette and serif headings at both s
     expect(fits).toBe(true);
   }
 });
+
