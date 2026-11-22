@@ -152,8 +152,9 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   await page.locator('#journalSearchResults').getByRole('button',{name:'Глюкоза',exact:true}).click();
   await expect(page.locator('#labsFilter')).toHaveValue('Глюкоза');
   await page.locator('#labsFilter').fill('');
+  await page.getByRole('button',{name:'По дате',exact:true}).click();
   await page.locator('#labsList details').first().evaluate(el => { el.open = true; });
-  await expect(page.locator('#labsList .row').first()).toContainText('5.2');
+  await expect(page.locator('#labsList .row').filter({hasText:'Глюкоза'}).first()).toContainText('5,2');
   const hematology = page.getByRole('table',{name:'Гематология — три последних результата',exact:true});
   const basophils = hematology.getByRole('row').filter({hasText:'Базофилы %'});
   await expect(basophils).toHaveCount(1);
@@ -191,18 +192,21 @@ test('Authenticated UI loads synthetic laboratory data and clears it on logout',
   expect(tipBounds.x+tipBounds.width).toBeLessThanOrEqual(390);
   await page.setViewportSize({width:1280,height:900});
   await expect(page.locator('#hematologyCharts svg')).toHaveCount(4);
-  await expect(page.locator('#labTrends svg')).toHaveCount(1);
-  await expect(page.locator('#labTrends')).toContainText('Базофилы %');
+  await page.getByRole('button',{name:'По показателю',exact:true}).click();
+  await page.locator('#labsFilter').fill('Базофилы %');
+  await expect(page.locator('#labAnalyteView svg')).toHaveCount(1);
+  await expect(page.locator('#labAnalyteView h3')).toHaveText('Базофилы %');
   for(const name of ['Тестостерон общий','Эстрадиол','Гематокрит','Гемоглобин','Эритроциты','Тромбоциты']){
-    await expect(page.locator('#labTrends')).not.toContainText(name);
+    await expect(page.locator('#labAnalyteView')).not.toContainText(name);
   }
+  await page.getByRole('button',{name:'По дате',exact:true}).click();
   await page.locator('#labsFilter').fill('10.01.2026 ГЛЮКОЗА');
   await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
   await page.locator('#labsFilter').fill('несуществующий показатель');
   await expect(page.locator('#labsList .lab-report').first()).toHaveClass(/hidden/);
   await page.locator('#labsFilter').fill('');
   await page.locator('#onlyAbnormal').check();
-  await expect(page.locator('#labsList .row').first()).toHaveClass(/hidden/);
+  await expect(page.locator('#labsList .row').filter({hasText:'Глюкоза'}).first()).toHaveClass(/hidden/);
   await page.locator('#onlyAbnormal').uncheck();
   await expect(page.locator('#labsList .lab-report').first()).not.toHaveClass(/hidden/);
   await page.locator('#sourceArchive summary').first().click();
@@ -416,4 +420,46 @@ test('Body measurements use one summary table and collapsed complete history',as
   await expect(summary.locator('tbody tr').first().locator('td small')).toHaveText(['15.11.2026','15.10.2026','15.08.2026']);
   await page.locator('#bodyOverview .body-history summary').click();
   await expect(all.locator('tbody tr')).toHaveCount(20);
+});
+
+test('Laboratory search opens compact analyte history and dates combine laboratories',async ({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  const ids=['11111111-1111-4111-8111-111111111111','11111111-1111-4111-8111-111111111112','11111111-1111-4111-8111-111111111113'];
+  await page.route('https://*.supabase.co/**',async route=>{
+    const url=new URL(route.request().url());let body=[];
+    if(url.pathname==='/auth/v1/token')body={access_token:'synthetic-journal',refresh_token:'synthetic-refresh',expires_at:1900000000,user:{id:'synthetic-journal-user'}};
+    else if(url.pathname.endsWith('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222',role:'owner'}];
+    else if(url.pathname.endsWith('/md_lab_reports'))body=ids.map((id,i)=>({id,sample_date:i<2?'2026-11-19':'2026-11-12',report_date:i<2?'2026-11-19':'2026-11-12',lab_name:i===1?'Lab B':'Lab A'}));
+    else if(url.pathname.endsWith('/md_lab_results'))body=[
+      {report_id:ids[0],analyte_name:'Гемоглобин',numeric_value:165,unit:'г/л',ref_low:135,ref_high:169},
+      {report_id:ids[1],analyte_name:'Глюкоза',numeric_value:5,unit:'ммоль/л',ref_low:4,ref_high:6},
+      {report_id:ids[2],analyte_name:'Гемоглобин',numeric_value:173,unit:'г/л',ref_low:135,ref_high:169}
+    ];
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('http://127.0.0.1:8765/');await page.locator('#email').fill('journal@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
+  await page.locator('#journalSearch').fill('гемог');
+  await page.locator('#journalSearchResults').getByRole('button',{name:'Гемоглобин',exact:true}).click();
+  const history=page.getByRole('table',{name:'Гемоглобин — история результатов',exact:true});
+  await expect(history.locator('tr.row')).toHaveCount(2);
+  await expect(history.locator('tr.row .lab-value')).toHaveText(['165 г/л','173 г/л↑']);
+  await expect(page.locator('#labAnalyteView svg')).toHaveCount(1);
+  await expect(page.locator('#labsList')).toBeHidden();
+  await history.getByRole('button',{name:'19.11.2026',exact:true}).click();
+  await expect(history.locator('.lab-details-row').first()).not.toHaveClass(/hidden/);
+  await expect(history.locator('.lab-mobile-lab').first()).toBeVisible();
+  await page.locator('#onlyAbnormal').check();
+  await expect(history.locator('tr.row')).toHaveCount(1);
+  await expect(page.locator('#labsStatus')).toContainText('Измерений 1');
+  await page.locator('#onlyAbnormal').uncheck();await page.locator('#labsFilter').fill('');
+  await page.getByRole('button',{name:'По дате',exact:true}).click();
+  await expect(page.locator('#labsList > .lab-report')).toHaveCount(2);
+  const date=page.locator('#labsList > .lab-report').first();
+  await expect(date.locator('summary')).toHaveText('19.11.2026 · 2 показателей');
+  await date.locator('summary').click();
+  await expect(date.locator('tr.row')).toHaveCount(2);
+  await expect(date).toContainText('Lab A');await expect(date).toContainText('Lab B');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.locator('#journalMenuButton').click();await page.locator('#accountLogout').click();
+  await expect(page.locator('#labAnalyteView')).toBeEmpty();await expect(page.locator('#labsList')).toBeEmpty();
 });
