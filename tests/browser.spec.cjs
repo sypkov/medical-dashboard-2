@@ -455,7 +455,7 @@ test('Laboratory search opens compact analyte history and dates combine laborato
   await page.getByRole('button',{name:'По дате',exact:true}).click();
   await expect(page.locator('#labsList > .lab-report')).toHaveCount(2);
   const date=page.locator('#labsList > .lab-report').first();
-  await expect(date.locator('summary')).toHaveText('19.11.2026 · 2 показателей');
+  await expect(date.locator('summary')).toHaveText('19.11.2026 (2)');
   await date.locator('summary').click();
   await expect(date.locator('tr.row')).toHaveCount(2);
   await expect(date).toContainText('Lab A');await expect(date).toContainText('Lab B');

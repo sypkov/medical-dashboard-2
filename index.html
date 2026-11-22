@@ -1262,7 +1262,7 @@ function labJournalRows(){
   }).sort((a,b)=>b.date.localeCompare(a.date)||a.name.localeCompare(b.name,'ru'));
 }
 function labJournalMatches(row,query){
-  const searchable=[row.name,row.analyte_code,row.report.lab_name,...[row.report.sample_date,row.report.report_date].filter(Boolean).flatMap(labSearchDateTerms)].filter(Boolean).join(' ').toLocaleLowerCase('ru').replace(/ё/g,'е');
+  const searchable=[row.name,row.analyte_name,row.analyte_code,row.report.lab_name,...[row.report.sample_date,row.report.report_date].filter(Boolean).flatMap(labSearchDateTerms)].filter(Boolean).join(' ').toLocaleLowerCase('ru').replace(/ё/g,'е');
   return query.split(/\s+/).filter(Boolean).every(term=>searchable.includes(term));
 }
 function labJournalTable(parent,label,headers){
@@ -1274,7 +1274,7 @@ function labJournalTable(parent,label,headers){
 }
 function appendLabJournalRow(body,entry,showName){
   const row=text(body,'tr','','row');
-  row.dataset.name=[entry.name,entry.analyte_code,entry.report.lab_name,...[entry.report.sample_date,entry.report.report_date].filter(Boolean).flatMap(labSearchDateTerms)].filter(Boolean).join(' ').toLocaleLowerCase('ru').replace(/ё/g,'е');
+  row.dataset.name=[entry.name,entry.analyte_name,entry.analyte_code,entry.report.lab_name,...[entry.report.sample_date,entry.report.report_date].filter(Boolean).flatMap(labSearchDateTerms)].filter(Boolean).join(' ').toLocaleLowerCase('ru').replace(/ё/g,'е');
   row.dataset.abnormal=String(entry.abnormal);
   const first=text(row,'td','');
   const button=text(first,'button',showName?entry.name:entry.date?displayMedicalDate(entry.date):'Без точной даты','lab-result-toggle');
