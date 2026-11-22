@@ -876,7 +876,7 @@ function drawMedicalLine(host,series,units,period=bodyPeriod,sparsePressure=fals
     line.setAttribute('fill','none');line.setAttribute('stroke',item.color);line.setAttribute('stroke-width','2.7');
     line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');svg.append(line);
     for(const point of item.points){
-      const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',String(xOf(point)));dot.setAttribute('cy',String(yOf(Number(point.value))));
+      const dot=document.createElementNS(ns,'circle');dot.classList.add('chart-point');dot.setAttribute('cx',String(xOf(point)));dot.setAttribute('cy',String(yOf(Number(point.value))));
       dot.setAttribute('r','2.8');dot.setAttribute('fill',item.color);
       const tip=document.createElementNS(ns,'title');tip.textContent=displayMedicalDate(point.measured_at)+' · '+item.name+': '+point.value+' '+units;dot.append(tip);svg.append(dot);
       tooltipEntries.push({date:point.measured_at,value:Number(point.value),unit:units,series:item.name,x:xOf(point),y:yOf(Number(point.value)),node:dot});
