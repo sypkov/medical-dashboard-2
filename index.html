@@ -160,7 +160,7 @@ button:hover{filter:brightness(.96)}
 .chart-lab-legend{display:flex;gap:5px 14px;margin:8px 0}.chart-point-detail{font-size:13px;line-height:1.6;color:var(--green);margin-top:8px}
 .chart-axis{fill:var(--muted);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:18px}
 .body-toolbar{gap:8px;margin-bottom:18px}.body-toolbar button{border:1px solid var(--border);color:var(--muted);background:var(--paper);font-size:14px;padding:9px 17px;border-radius:999px}.body-toolbar button.active{background:#e0e7de;border-color:#ccd9cd;color:#275e4b}
-.body-delta{font-size:14px;color:var(--muted)}.body-vitals{gap:18px}.body-big-chart{height:auto;aspect-ratio:640/235;min-height:160px}.body-vitals-card h3{font-size:25px}.vitals-legend span{font-size:14px}
+.body-delta{font-size:14px;color:var(--muted)}.body-vitals{gap:18px;grid-template-columns:minmax(0,1fr)}.body-big-chart{height:260px;width:100%;min-height:220px}.body-vitals-card h3{font-size:21px;margin-bottom:18px}.vitals-legend{justify-content:center;margin:4px 0 10px}.vitals-legend span{font-size:12px}.body-big-chart .chart-axis{font-size:10px;fill:#77766f}.body-chart-area{pointer-events:none}
 .protocol-history-title{color:var(--muted);font-size:14px;font-weight:400}
 .protocol-medication{margin-bottom:30px}.protocol-medication h3{font-size:26px;color:var(--ink)}
 .protocol-table-wrap{background:var(--paper);border:1px solid var(--border);border-radius:20px}
@@ -190,7 +190,7 @@ button:hover{filter:brightness(.96)}
  #overview .reference-warning,#overview .reference-note{padding:19px 20px;font-size:14px}
  .reference-section-charts{grid-template-columns:1fr;gap:15px}.hematology-chart-card{padding:21px 18px}.hematology-chart-card strong{font-size:38px}.hematology-line-chart{height:auto;min-height:170px}.chart-axis{font-size:26px}
  .card{padding:21px 18px;border-radius:23px}.protocol-history-table td{padding:0}.protocol-history-table tr{padding:15px}.protocol-note{padding:18px 20px}.protocol-note summary{font-size:22px}
- .body-vitals{grid-template-columns:1fr}.body-big-chart{height:auto;aspect-ratio:640/235;min-height:160px}
+ .body-vitals{grid-template-columns:1fr}.body-big-chart{height:auto;aspect-ratio:640/235;min-height:220px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style><style id="chart-interaction">
@@ -529,7 +529,7 @@ function attachMedicalChartTooltip(svg,entries,onSelect){
     date.textContent=displayMedicalDate(entry.date);
     value.textContent=(entry.series?entry.series+': ':'')+Number(entry.value).toLocaleString('ru-RU',{maximumFractionDigits:6})+' '+(entry.unit||'');
     lab.textContent=entry.lab||'';lab.hidden=!entry.lab;
-    tooltip.hidden=false;guide.style.display='';selected.style.display='';const selectedColor=entry.node?.getAttribute('fill')||'#397b64';selected.style.fill=selectedColor;value.style.color=selectedColor;
+    tooltip.hidden=false;guide.style.display='';selected.style.display='';const selectedColor=entry.node?.dataset.color||entry.node?.getAttribute('fill')||'#397b64';selected.style.fill=selectedColor;value.style.color=selectedColor;
     guide.setAttribute('x1',String(entry.x));guide.setAttribute('x2',String(entry.x));
     selected.setAttribute('cx',String(entry.x));selected.setAttribute('cy',String(entry.y));
     const matrix=svg.getScreenCTM();
@@ -855,42 +855,60 @@ function drawMedicalLine(host,series,units,period=bodyPeriod,sparsePressure=fals
   const points=selected.flatMap(item=>item.points);
   const times=points.map(point=>Date.parse(point.measured_at)),values=points.map(point=>Number(point.value));
   const xmin=Math.min(...times),xmax=Math.max(...times),min=Math.min(...values),max=Math.max(...values);
-  const padding=(max-min||Math.max(Math.abs(max)*.05,1))*.1;
-  const ymin=min-padding,ymax=max+padding;
-  const left=78,right=620,top=18,bottom=185;
-  const xOf=point=>xmin===xmax?(left+right)/2:left+(right-left)*(Date.parse(point.measured_at)-xmin)/(xmax-xmin);
+  const roughStep=(max-min||Math.max(Math.abs(max)*0.1,1))/3;
+  const magnitude=10**Math.floor(Math.log10(roughStep));
+  const step=[1,2,5,10].map(value=>value*magnitude).find(value=>value>=roughStep);
+  const ymin=Math.floor((min-step*0.2)/step)*step;
+  const ymax=Math.ceil((max+step*0.2)/step)*step;
+  const left=52,right=884,top=16,bottom=174;
+  const ordered=[...new Map(points.map(point=>[Date.parse(point.measured_at),point])).values()].sort((a,b)=>Date.parse(a.measured_at)-Date.parse(b.measured_at));
+  const sampleIndex=new Map(ordered.map((point,index)=>[Date.parse(point.measured_at),index]));
+  const vitals=host.id==='bloodPressureChart'||host.id==='pulseChartNew';
+  const xOf=point=>{
+    if(ordered.length===1)return (left+right)/2;
+    return left+(right-left)*(vitals?sampleIndex.get(Date.parse(point.measured_at))/(ordered.length-1):(Date.parse(point.measured_at)-xmin)/(xmax-xmin));
+  };
   const yOf=value=>bottom-(bottom-top)*(value-ymin)/(ymax-ymin);
   const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
-  svg.setAttribute('viewBox','0 0 640 235');svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  svg.setAttribute('viewBox','0 0 900 260');svg.setAttribute('preserveAspectRatio','xMidYMid meet');
   svg.setAttribute('role','img');svg.setAttribute('aria-label',selected.map(item=>item.name).join(', '));svg.classList.add('body-big-chart');
-  for(let tick=0;tick<4;tick++){
-    const value=ymin+(ymax-ymin)*tick/3,y=yOf(value),grid=document.createElementNS(ns,'line');
+  for(let value=ymin;value<=ymax+step/100;value+=step){
+    const y=yOf(value),grid=document.createElementNS(ns,'line');
     grid.setAttribute('x1',String(left));grid.setAttribute('x2',String(right));grid.setAttribute('y1',String(y));grid.setAttribute('y2',String(y));
-    grid.setAttribute('stroke','#c9c5b8');grid.setAttribute('stroke-dasharray','4 5');svg.append(grid);
-    chartAxisLabel(svg,left-10,y+6,Number(value.toPrecision(3)).toLocaleString('ru-RU'),'end');
+    grid.setAttribute('stroke','#e2e1dc');grid.setAttribute('stroke-width','1');svg.append(grid);
+    chartAxisLabel(svg,left-10,y+4,Number(value.toPrecision(4)).toLocaleString('ru-RU'),'end');
   }
   const tooltipEntries=[];
   for(const item of selected){
     const line=document.createElementNS(ns,'path');line.classList.add('medical-curve');
-    line.setAttribute('d',medicalSmoothPath(item.points.map(point=>({x:xOf(point),y:yOf(Number(point.value))}))));
-    line.setAttribute('fill','none');line.setAttribute('stroke',item.color);line.setAttribute('stroke-width','2.7');
+    const path=medicalSmoothPath(item.points.map(point=>({x:xOf(point),y:yOf(Number(point.value))})));
+    line.setAttribute('d',path);
+    if(host.id==='pulseChartNew'){
+      const area=document.createElementNS(ns,'path');area.classList.add('body-chart-area');
+      area.setAttribute('d',path+' L '+xOf(item.points[item.points.length-1])+' '+bottom+' L '+xOf(item.points[0])+' '+bottom+' Z');
+      area.setAttribute('fill',item.color);area.setAttribute('fill-opacity','0.10');svg.append(area);
+    }
+    line.setAttribute('fill','none');line.setAttribute('stroke',item.color);line.setAttribute('stroke-width','1.8');
     line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');svg.append(line);
     for(const point of item.points){
       const dot=document.createElementNS(ns,'circle');dot.classList.add('chart-point');dot.setAttribute('cx',String(xOf(point)));dot.setAttribute('cy',String(yOf(Number(point.value))));
-      dot.setAttribute('r','2.8');dot.setAttribute('fill',item.color);
+      dot.dataset.color=item.color;dot.setAttribute('r','2.8');dot.setAttribute('fill','#fcfbf6');dot.setAttribute('stroke',item.color);dot.setAttribute('stroke-width','1.8');
       const tip=document.createElementNS(ns,'title');tip.textContent=displayMedicalDate(point.measured_at)+' · '+item.name+': '+point.value+' '+units;dot.append(tip);svg.append(dot);
       tooltipEntries.push({date:point.measured_at,value:Number(point.value),unit:units,series:item.name,x:xOf(point),y:yOf(Number(point.value)),node:dot});
     }
   }
-  const ordered=[...new Map(points.map(point=>[point.measured_at,point])).values()].sort((a,b)=>Date.parse(a.measured_at)-Date.parse(b.measured_at));
   const axisPoints=[ordered[0]];
   for(const point of ordered.slice(1,-1)){
-    if(xOf(point)-xOf(axisPoints[axisPoints.length-1])>=110&&right-xOf(point)>=110)axisPoints.push(point);
+    if(xOf(point)-xOf(axisPoints[axisPoints.length-1])>=100&&right-xOf(point)>=100)axisPoints.push(point);
   }
   if(ordered.length>1)axisPoints.push(ordered[ordered.length-1]);
   for(let index=0;index<axisPoints.length;index++){
-    const point=axisPoints[index],date=displayMedicalDate(point.measured_at).slice(0,5);
-    chartAxisLabel(svg,xOf(point),219,date,index===0?'start':index===axisPoints.length-1?'end':'middle');
+    const point=axisPoints[index];
+    const date=displayMedicalDate(point.measured_at).slice(0,5);
+    const time=new Intl.DateTimeFormat('ru-RU',{timeZone:'Asia/Baku',hour:'2-digit',minute:'2-digit'}).format(new Date(point.measured_at));
+    chartAxisLabel(svg,xOf(point),vitals?205:214,date,index===0?'start':index===axisPoints.length-1?'end':'middle');
+    if(vitals){const label=document.createElementNS(ns,'text');label.setAttribute('x',String(xOf(point)));label.setAttribute('y','222');label.setAttribute('text-anchor',index===0?'start':index===axisPoints.length-1?'end':'middle');label.setAttribute('fill','#929088');label.setAttribute('font-size','9');label.textContent=time;svg.append(label);}
+
   }
   host.append(svg);
   attachMedicalChartTooltip(svg,tooltipEntries);
@@ -965,8 +983,8 @@ function renderBodyHistory(rows){
   weightPeriod.replaceChildren();
   addMedicalPeriodToolbar(weightPeriod,'body:weight',()=>renderBodyHistory(bodyHistory),[['all','Показать все'],['6','6 мес'],['3','3 мес'],['1','1 мес']]);
   drawMedicalLine(e('bodyWeightChart'),[{name:'Вес',color:'#397b64',points:byMetric.get('weight')||[]}],'кг',labChartPeriods.get('body:weight')||'6');
-  drawMedicalLine(e('bloodPressureChart'),[{name:'Систолическое',color:'#397b64',points:byMetric.get('systolic')||[]},{name:'Диастолическое',color:'#9b8465',points:byMetric.get('diastolic')||[]}],'мм рт. ст.',bodyPeriod,!bodyPeriodCustomized);
-  drawMedicalLine(e('pulseChartNew'),[{name:'Пульс',color:'#397b64',points:byMetric.get('pulse')||[]}],'уд/мин');
+  drawMedicalLine(e('bloodPressureChart'),[{name:'Систолическое',color:'#ee4b85',points:byMetric.get('systolic')||[]},{name:'Диастолическое',color:'#5271ff',points:byMetric.get('diastolic')||[]}],'мм рт. ст.',bodyPeriod,!bodyPeriodCustomized);
+  drawMedicalLine(e('pulseChartNew'),[{name:'Пульс',color:'#37b855',points:byMetric.get('pulse')||[]}],'уд/мин');
 }
 
 document.querySelectorAll('.body-period').forEach(button=>button.addEventListener('click',()=>{bodyPeriod=button.dataset.days;bodyPeriodCustomized=true;document.querySelectorAll('.body-period').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))});renderBodyHistory(bodyHistory)}));
