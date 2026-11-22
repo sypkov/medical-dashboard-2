@@ -237,7 +237,7 @@ button:hover{filter:brightness(.96)}
 .chart-period-toolbar button.active{background:var(--green-soft);color:#275e4b;border-color:#b8d0c1;font-weight:500}
 .chart-period-toolbar button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style><style id="reference-line-colors">#overview .reference-panel .data-row.mild>strong{color:var(--mild-line)!important}.reference-color-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;margin:8px 0}.reference-color-legend span{white-space:nowrap}</style><style id="chemistry-tables-and-text">
-#chemistryOverview,#hormonesOverview,#hematologyOverview,#markersOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
+#chemistryOverview,#hormonesOverview,#hematologyOverview,#markersOverview,#bodyOverview{display:block!important}.chemistry-caption{font-size:14px;margin:0 0 14px}.medical-table-wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--border);border-radius:16px;margin:12px 0;overscroll-behavior-x:contain}
 .medical-results-table{width:100%;min-width:610px;border-collapse:collapse;font-size:14px}.medical-results-table th,.medical-results-table td{text-align:left;padding:13px 14px;vertical-align:top;border-bottom:1px solid var(--border)}.medical-results-table thead th{font-weight:500;color:var(--muted);background:#eeece3}.medical-results-table tbody th{font-weight:500;min-width:200px;max-width:260px}.medical-results-table tbody td{min-width:125px}.medical-results-table tr:last-child>*{border-bottom:0}.medical-results-table small{display:block;font-size:12px;font-weight:400;margin-top:5px}.medical-results-table strong{font-size:18px;font-weight:500}.chemistry-history{margin:22px 0}.chemistry-history>summary{cursor:pointer;color:var(--green);font-size:16px;font-weight:500}
 .medical-text-block{padding:18px 20px;margin:12px 0;border:1px solid var(--border);border-radius:18px;background:var(--paper)}.medical-text-block>summary{cursor:pointer;font-weight:500;color:var(--ink)}.medical-text-block h3{font-size:22px;margin:0 0 12px}.medical-text-body p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.65;color:var(--ink)}.medical-text-body p:last-child{margin-bottom:0}#medicalTextBlocks>p{font-size:14px}
 </style><style id="chemistry-mobile">@media(max-width:700px){.chemistry-summary{min-width:0;table-layout:fixed;font-size:12px}.chemistry-summary th,.chemistry-summary td{padding:10px 6px;min-width:0!important;max-width:none!important;overflow-wrap:anywhere}.chemistry-summary th:first-child{width:37%}.chemistry-summary strong{font-size:16px}.chemistry-summary small{font-size:10.5px;line-height:1.45}.chemistry-summary thead th{font-size:11px}}</style><style id="thematic-explanations">
@@ -888,9 +888,73 @@ function drawMedicalLine(host,series,units){
   for(const item of selected){const latest=item.points[item.points.length-1];const label=text(legend,'span',item.name+': '+String(latest.value).replace('.',',')+' '+units);label.style.borderLeft='3px solid '+item.color}
   text(host,'small',displayMedicalDate(new Date(xmin).toISOString())+' — '+displayMedicalDate(new Date(xmax).toISOString()));
 }
-function renderBodyHistory(rows){const host=e('bodyOverview');host.replaceChildren();const byMetric=new Map();for(const x of rows){const metric=x.metric||'Измерение';if(!byMetric.has(metric))byMetric.set(metric,[]);byMetric.get(metric).push(x)}const names={weight:'Вес',body_fat:'Доля жира',muscle_mass:'Мышечная масса',hydration:'Гидратация',visceral_fat:'Висцеральный жир',bmi:'ИМТ',protein_pct:'Белок',bone_mass:'Костная масса',basal_metabolic_rate:'Основной обмен',body_age:'Возраст тела',body_score:'Оценка тела',systolic:'Систолическое давление',diastolic:'Диастолическое давление',pulse:'Пульс'};const latestDate=rows.length?Math.max(...rows.map(p=>new Date(p.measured_at).getTime())):null;const cutoffDate=latestDate===null?null:medicalPeriodCutoff(new Date(latestDate).toISOString().slice(0,10),bodyPeriod);const cutoff=cutoffDate?new Date(cutoffDate+'T00:00:00Z'):null;
-let visibleCount=0;for(const [metric,points] of byMetric){if(['systolic','diastolic','pulse'].includes(metric))continue;const ordered=points.filter(p=>p.value!==null&&Number.isFinite(Number(p.value))).sort((a,b)=>String(a.measured_at).localeCompare(String(b.measured_at)));if(!ordered.length)continue;const visible=cutoff?ordered.filter(p=>new Date(p.measured_at)>=cutoff):ordered;if(!visible.length)continue;visibleCount++;const latest=visible[visible.length-1];const card=text(host,'div','','data-row');text(card,'span',names[metric]||metric,'card-label');text(card,'strong',String(latest.value).replace('.',',')+' '+(latest.unit||''));if(visible.length>1){const delta=Number(latest.value)-Number(visible[0].value);text(card,'span','Изменение: '+(delta>0?'+':'')+Number(delta.toFixed(2)).toLocaleString('ru-RU')+' '+(latest.unit||''),'body-delta');const values=visible.map(p=>Number(p.value)),min=Math.min(...values),max=Math.max(...values),span=max-min||1;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 160 40');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика '+(names[metric]||metric));svg.classList.add('sparkline');const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');line.setAttribute('points',visible.map((p,i)=>(3+i*154/(visible.length-1))+','+(35-(Number(p.value)-min)/span*30)).join(' '));line.setAttribute('stroke','#397b64');line.setAttribute('stroke-width','2');line.setAttribute('fill','none');svg.append(line);card.append(svg)}text(card,'span',displayMedicalDate(visible[0].measured_at)+' — '+displayMedicalDate(latest.measured_at)+' · '+visible.length+' измерений','date')}if(!visibleCount)text(host,'div','Нет измерений состава тела за выбранный период.','reference-empty');
-drawMedicalLine(e('bloodPressureChart'),[{name:'Систолическое',color:'#397b64',points:byMetric.get('systolic')||[]},{name:'Диастолическое',color:'#9b8465',points:byMetric.get('diastolic')||[]}],'мм рт. ст.');drawMedicalLine(e('pulseChartNew'),[{name:'Пульс',color:'#397b64',points:byMetric.get('pulse')||[]}],'уд/мин')}
+function renderBodyHistory(rows){
+  const host=e('bodyOverview');
+  host.replaceChildren();
+  const names={weight:'Вес',muscle_mass:'Мышечная масса',body_fat:'Доля жира',hydration:'Гидратация',visceral_fat:'Висцеральный жир',bmi:'ИМТ',protein_pct:'Белок',bone_mass:'Костная масса',basal_metabolic_rate:'Основной обмен',body_age:'Возраст тела',body_score:'Оценка тела'};
+  const byMetric=new Map();
+  for(const row of rows){
+    if(!byMetric.has(row.metric))byMetric.set(row.metric,[]);
+    byMetric.get(row.metric).push(row);
+  }
+  const bodyRows=rows.filter(row=>!['systolic','diastolic','pulse'].includes(row.metric));
+  const dates=bodyRows.map(row=>String(row.measured_at||'').slice(0,10)).filter(validLabDate).sort();
+  const cutoff=medicalPeriodCutoff(dates[dates.length-1],bodyPeriod);
+  const visible=bodyRows.filter(row=>!cutoff||String(row.measured_at||'').slice(0,10)>=cutoff);
+  const series=new Map();
+  for(const row of visible){
+    const key=row.metric+'|'+String(row.unit||'');
+    if(!series.has(key))series.set(key,[]);
+    series.get(key).push(row);
+  }
+  const priority=['weight','muscle_mass','body_fat','hydration'];
+  function tableInto(parent,label,headers){
+    const wrap=text(parent,'div','','medical-table-wrap');
+    const table=text(wrap,'table','','medical-results-table');
+    table.setAttribute('aria-label',label);
+    const header=text(text(table,'thead',''),'tr','');
+    for(const title of headers){const cell=text(header,'th',title);cell.scope='col';}
+    return text(table,'tbody','');
+  }
+  function valueInto(cell,row,showDate){
+    if(!row){text(cell,'span','—');return;}
+    const value=row.value===null||row.value===undefined||String(row.value).trim()===''?'—':String(row.value).replace('.',',');
+    text(cell,'strong',value);
+    if(showDate)text(cell,'small',displayMedicalDate(row.measured_at));
+  }
+  if(series.size){
+    const summary=tableInto(host,'Состав тела — три последних результата',['Показатель','Последний','Пред.','Ранее']);
+    summary.closest('table').classList.add('body-summary');
+    const orderedSeries=[...series.values()].sort((a,b)=>{
+      const rank=metric=>priority.includes(metric)?priority.indexOf(metric):priority.length;
+      return rank(a[0].metric)-rank(b[0].metric)||(names[a[0].metric]||a[0].metric||'').localeCompare(names[b[0].metric]||b[0].metric||'','ru');
+    });
+    for(const points of orderedSeries){
+      points.sort((a,b)=>String(b.measured_at||'').localeCompare(String(a.measured_at||'')));
+      const row=text(summary,'tr',''),name=text(row,'th','');
+      name.scope='row';
+      text(name,'span',names[points[0].metric]||points[0].metric||'Измерение');
+      text(name,'small',points[0].unit||'');
+      for(let index=0;index<3;index++)valueInto(text(row,'td',''),points[index],true);
+    }
+  }else text(host,'div','Нет измерений состава тела за выбранный период.','reference-empty');
+  if(bodyRows.length){
+    const history=text(host,'details','','chemistry-history body-history');
+    text(history,'summary','История всех измерений тела · '+bodyRows.length);
+    const body=tableInto(history,'Состав тела — полная хронология',['Дата','Показатель','Результат','Единица']);
+    const ordered=[...bodyRows].sort((a,b)=>String(b.measured_at||'').localeCompare(String(a.measured_at||''))||(names[a.metric]||a.metric||'').localeCompare(names[b.metric]||b.metric||'','ru'));
+    for(const entry of ordered){
+      const row=text(body,'tr','');
+      text(row,'td',displayMedicalDate(entry.measured_at));
+      text(row,'td',names[entry.metric]||entry.metric||'Измерение');
+      valueInto(text(row,'td',''),entry,false);
+      text(row,'td',entry.unit||'');
+    }
+  }
+  drawMedicalLine(e('bloodPressureChart'),[{name:'Систолическое',color:'#397b64',points:byMetric.get('systolic')||[]},{name:'Диастолическое',color:'#9b8465',points:byMetric.get('diastolic')||[]}],'мм рт. ст.');
+  drawMedicalLine(e('pulseChartNew'),[{name:'Пульс',color:'#397b64',points:byMetric.get('pulse')||[]}],'уд/мин');
+}
+
 document.querySelectorAll('.body-period').forEach(button=>button.addEventListener('click',()=>{bodyPeriod=button.dataset.days;document.querySelectorAll('.body-period').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))});renderBodyHistory(bodyHistory)}));
 async function loadProtocolNotes(serial=labsRequestSerial){const epoch=privateViewEpoch;if(!signed||serial!==labsRequestSerial)return;const host=e('protocolNotes');if(!host)return;host.replaceChildren();try{const rows=(await labReadPages('md_content_blocks?select=title,body,kind,sensitivity,created_at&patient_id=eq.'+encodeURIComponent(PATIENT)+'&kind=eq.protocol_history&order=created_at.asc,id.asc',epoch,serial)).filter(row=>/расписание добавок/i.test(row.title||''));if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)return;if(!rows.length){return}for(const row of rows){const details=document.createElement('details');details.className='protocol-note';host.append(details);const summary=document.createElement('summary');summary.textContent=row.title||'Историческое примечание';details.append(summary);text(details,'p',row.body||'')}}catch(err){if(signed&&epoch===privateViewEpoch&&serial===labsRequestSerial)text(host,'p','Не удалось загрузить историю протокола: '+(err.message||String(err)),'reference-empty')}}
 let consultationHistory=[];function consultationSpecialty(title){

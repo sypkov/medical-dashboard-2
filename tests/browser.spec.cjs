@@ -373,3 +373,38 @@ test('Markers use tables and protocol reveals seven completed and two planned in
   await expect(page.locator('.protocol-dose-total')).toHaveText('Всего введено: 1 000 мг');
   await expect(page.locator('.body-period[data-days="6"]')).toHaveAttribute('aria-pressed','true');
 });
+
+test('Body measurements use one summary table and collapsed complete history',async ({page})=>{
+  const dates=['2025-01-01','2026-05-15','2026-08-15','2026-10-15','2026-11-15'];
+  await page.route('https://*.supabase.co/**',async route=>{
+    const url=new URL(route.request().url());let body=[];
+    if(url.pathname==='/auth/v1/token')body={access_token:'synthetic-body-table',refresh_token:'synthetic-refresh',expires_at:1900000000,user:{id:'synthetic-body-user'}};
+    else if(url.pathname.endsWith('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222',role:'owner'}];
+    else if(url.pathname.endsWith('/md_diary_entries'))body=dates.flatMap((date,index)=>[
+      {measured_at:date+'T08:00:00Z',metric:'weight',value:70-index,unit:'кг'},
+      {measured_at:date+'T08:00:00Z',metric:'muscle_mass',value:50+index,unit:'кг'},
+      {measured_at:date+'T08:00:00Z',metric:'body_fat',value:25-index,unit:'%'},
+      {measured_at:date+'T08:00:00Z',metric:'hydration',value:53,unit:'%'},
+      {measured_at:date+'T08:00:00Z',metric:'pulse',value:70,unit:'уд/мин'}
+    ]);
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('http://127.0.0.1:8765/');
+  await page.locator('#email').fill('body@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
+  const summary=page.getByRole('table',{name:'Состав тела — три последних результата',exact:true});
+  await expect(summary.locator('tbody th span')).toHaveText(['Вес','Мышечная масса','Доля жира','Гидратация']);
+  await expect(summary.locator('tbody tr').first().locator('td strong')).toHaveText(['66','67','68']);
+  await expect(page.locator('#bodyOverview .data-row')).toHaveCount(0);
+  await expect(page.locator('#bodyOverview svg')).toHaveCount(0);
+  const history=page.locator('#bodyOverview .body-history');
+  await expect(history).not.toHaveAttribute('open');
+  await history.locator('summary').click();
+  const all=page.getByRole('table',{name:'Состав тела — полная хронология',exact:true});
+  await expect(all.locator('tbody tr')).toHaveCount(20);
+  await expect(all).toContainText('01.01.2025');
+  await expect(all).not.toContainText('Пульс');
+  await page.locator('.body-toolbar').getByRole('button',{name:'3 мес',exact:true}).click();
+  await expect(summary.locator('tbody tr').first().locator('td small')).toHaveText(['15.11.2026','15.10.2026','15.08.2026']);
+  await page.locator('#bodyOverview .body-history summary').click();
+  await expect(all.locator('tbody tr')).toHaveCount(20);
+});
