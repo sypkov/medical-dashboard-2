@@ -397,3 +397,24 @@ test('hormones sort by history count while chemistry keeps alphabetical order',(
   assert.deepEqual(build(items).map(rows=>rows[0].name),['А','Б','В','Г']);
   assert.deepEqual(build(items,true)[0].map(row=>row.date),['2026-11-19','2026-11-12','2026-11-05']);
 });
+
+test('Sparse pressure counts paired readings once and returns latest seven sessions',()=>{
+  const state={Intl,Date,Map,Set};
+  vm.createContext(state);
+  vm.runInContext(['validLabDate','medicalPeriodCutoff','selectBodyChartSeries'].map(extractFunction).join('\n'),state);
+  const dates=['2025-01-01','2025-02-01','2025-03-01','2025-04-01','2025-05-01','2025-06-01','2026-10-01','2026-11-01'];
+  const series=['Систолическое','Диастолическое'].map(name=>({name,points:dates.map(measured_at=>({measured_at:measured_at+'T08:00:00Z',value:100}))}));
+  const selected=state.selectBodyChartSeries(series,'6',true,new Date('2026-11-22T12:00:00Z'));
+  assert.equal(selected[0].points.length,7);assert.equal(selected[1].points.length,7);
+  assert.equal(selected[0].points[0].measured_at,'2025-02-01T08:00:00Z');
+  assert.equal(state.selectBodyChartSeries(series,'all',false)[0].points.length,8);
+  assert.equal(state.selectBodyChartSeries(series,'6',true,new Date('2026-11-22T12:00:00Z'))[0].points.at(-1).measured_at,'2026-11-01T08:00:00Z');
+});
+test('One month weight period includes the calendar boundary',()=>{
+  const state={Intl,Date,Map,Set};
+  vm.createContext(state);
+  vm.runInContext(['validLabDate','medicalPeriodCutoff','selectBodyChartSeries'].map(extractFunction).join('\n'),state);
+  assert.equal(state.medicalPeriodCutoff('2026-03-31','1'),'2026-02-28');
+  const points=['2026-09-30','2026-10-15','2026-11-15'].map(measured_at=>({measured_at:measured_at+'T08:00:00Z',value:70}));
+  assert.equal(state.selectBodyChartSeries([{points}],'1')[0].points.length,2);
+});

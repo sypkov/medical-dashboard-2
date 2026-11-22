@@ -396,6 +396,11 @@ test('Body measurements use one summary table and collapsed complete history',as
   await expect(summary.locator('tbody tr').first().locator('td strong')).toHaveText(['66','67','68']);
   await expect(page.locator('#bodyOverview .data-row')).toHaveCount(0);
   await expect(page.locator('#bodyOverview svg')).toHaveCount(0);
+  expect(await page.locator('#bodyCharts').evaluate(node=>Boolean(node.compareDocumentPosition(document.getElementById('bodyOverview'))&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  const weight=page.locator('#bodyWeightCard');
+  await weight.getByRole('button',{name:'1 мес',exact:true}).click();
+  await expect(weight.getByRole('button',{name:'1 мес',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(weight.locator('#bodyWeightChart .chart-point')).toHaveCount(2);
   const history=page.locator('#bodyOverview .body-history');
   await expect(history).not.toHaveAttribute('open');
   await history.locator('summary').click();
