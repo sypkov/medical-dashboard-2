@@ -46,6 +46,8 @@ jobs:
           node-version: '22'
       - name: Install Chromium test runner
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y poppler-utils
           npm install --no-save @playwright/test@1.56.1
           npx playwright install --with-deps chromium
       - name: Run local dashboard in browser
