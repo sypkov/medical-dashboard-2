@@ -252,10 +252,13 @@ button:hover{filter:brightness(.96)}
 .lab-journal-heading,.lab-journal-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.lab-journal-heading h2{border:0;padding:0;margin:0}.lab-journal-heading button{margin:0;font-size:12px;padding:8px 13px}.lab-journal-tools .body-toolbar{margin:12px 0}.lab-journal-tools .check{margin:0!important;font-size:13px}#labsStatus{font-size:13px;margin:8px 0 16px}
 .lab-journal-table{width:100%;border-collapse:collapse;font-size:14px}.lab-journal-table th,.lab-journal-table td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}.lab-journal-table th{font-size:12px;font-weight:500;color:var(--muted)}.lab-journal-table tr:last-child>td{border-bottom:0}.lab-journal-table small{display:block;font-size:11px}.lab-journal-table .row{padding:0}.lab-journal-table .lab-value{font-weight:600;white-space:nowrap}.lab-journal-table button{background:transparent;color:var(--green);padding:0;margin:0;font:inherit;text-align:left}.lab-journal-table .lab-details-row td{padding:13px;background:#eeece340;color:var(--muted);font-size:12px}.lab-journal-table .lab-details-row p{margin:4px 0}.lab-journal-table .lab-table-ref{font-size:12px;color:var(--muted)}#labsList>.lab-report{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0;border-bottom:1px solid var(--border)}#labsList>.lab-report>details>summary{padding:15px 4px;cursor:pointer}.lab-analyte-heading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:20px 0 10px}.lab-analyte-heading h3{font:500 26px Georgia,serif;margin:0}.lab-analyte-heading strong{font:500 28px Georgia,serif}.lab-analyte-heading small{font-size:12px}.lab-selected-chart:empty{display:none}.lab-selected-chart>.lab-report{padding:12px 0;border:0;background:transparent;box-shadow:none}.lab-selected-chart>.lab-report>small{display:none}.lab-journal-scroll{overflow-x:auto}.lab-journal-table .lab-open-analyte{font-weight:500}.lab-row-badge{font-size:11px;margin-left:7px;white-space:nowrap}
 @media(max-width:600px){.lab-journal-table{font-size:13px}.lab-journal-table td,.lab-journal-table th{padding:10px 6px}.lab-journal-table .lab-table-lab{display:none}.lab-journal-table .lab-mobile-lab{display:block}.lab-journal-table .lab-table-ref{max-width:120px}.lab-analyte-heading h3{font-size:23px}}@media(min-width:601px){.lab-mobile-lab{display:none!important}}
+</style><style>
+#pdfDialog{width:min(100%,900px);max-height:90vh;padding:0}#pdfContent{padding:20px}#pdfContent table{width:100%;border-collapse:collapse}#pdfContent th,#pdfContent td{font-size:12px;padding:6px;border:1px solid #ddd}#pdfContent p{white-space:pre-wrap}#pdfDialog::backdrop{background:#0008}.pdf-tools{padding:12px}.pdf-chart{break-inside:avoid}
+@media print{@page{size:A4;margin:12mm}body.pdf-export-open> :not(#pdfDialog){display:none!important}#pdfDialog{display:block;position:static;max-height:none;overflow:visible;max-width:none;width:100%} .pdf-tools{display:none}#pdfContent{padding:0}#pdfContent h2{break-after:avoid}#pdfContent tr{break-inside:avoid}#pdfContent thead{display:table-header-group}#pdfContent button{display:none}#pdfContent .hematology-chart-card{break-inside:avoid}#pdfContent svg{max-width:100%}#pdfContent .protocol-table-wrap{overflow:visible}}
 </style></head><body><header class="header journal-header"><button id="journalMenuButton" class="hidden" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="accountBar"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><div><h1>Лабораторный журнал</h1><p id="journalInitials" class="hidden"></p></div><section class="hidden" id="accountBar" aria-label="Меню аккаунта"><small id="accountName"></small><button id="accountLogout" type="button">Выйти</button></section></header><main><section class="card" id="loginCard"><h2>Вход в журнал</h2><p id="auth">Не авторизован</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Пароль<input id="password" type="password" autocomplete="current-password"></label><button id="login">Войти</button><button id="logout" disabled>Выйти</button></section><section class="card" id="recoveryCard"><h2>Восстановление доступа</h2><p>Запроси письмо для смены пароля. Если Supabase сообщает о лимите писем, дождись его сброса.</p><label>Email для восстановления<input id="recoveryEmail" type="email" autocomplete="email"></label><button id="requestRecovery">Отправить письмо</button><div id="newPasswordPanel" class="hidden"><p>Ссылка восстановления подтверждена. Установи новый пароль.</p><label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="12"></label><label>Повтори пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="12"></label><button id="savePassword">Сохранить новый пароль</button></div></section><section class="hidden" id="overview">
 <form id="journalSearchForm" role="search"><label class="sr-only" for="journalSearch">Найти показатель</label><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m15 15 5 5" stroke="currentColor" stroke-width="1.7"/></svg><input id="journalSearch" type="search" placeholder="Найти показатель" autocomplete="off" aria-controls="journalSearchResults"><button class="sr-only" type="submit">Найти</button></form><div id="journalSearchResults" hidden></div><nav class="reference-nav" aria-label="Разделы"><a class="active" href="#overview">Обзор</a><a href="#hormonesSection">Гормоны</a><a href="#hematologySection">Гематология</a><a href="#chemistrySection">Биохимия</a><a href="#markersSection">Маркеры</a><a href="#protocolSection">Протокол</a><a href="#bodySection">Состав тела и давление</a><a href="#visitsSection">Врачи</a><a href="#labsCard">Все анализы</a><a href="#importCard">Импорт</a></nav>
 <section id="patientSummary" aria-label="Медицинский профиль"><p class="patient-eyebrow">Медицинский дашборд</p><h2 id="patientDisplayName">Медицинский профиль</h2><p id="patientMetadata"></p></section><div class="reference-sticky"><div class="reference-sticky-grid" id="overviewMetrics"></div></div>
-<div class="section-controls"><button type="button" id="expandDashboardSections">Развернуть всё</button><button type="button" id="collapseDashboardSections">Свернуть всё</button></div>
+<div class="section-controls"><button type="button" id="exportPdf">Выгрузить PDF</button><button type="button" id="expandDashboardSections">Развернуть всё</button><button type="button" id="collapseDashboardSections">Свернуть всё</button></div>
 <div class="overview-content"><p id="overviewStatus">Загружаем данные из Supabase…</p>
 <div class="section-title">Ключевые моменты для обсуждения с врачом</div>
 <div class="reference-warning"><strong>Требуют внимания / контроля</strong><div id="overviewAttention">Загружаем…</div></div>
@@ -268,7 +271,7 @@ button:hover{filter:brightness(.96)}
 <div id="protocolSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="bodySection">Состав тела и давление</div><div class="body-toolbar" role="group" aria-label="Период измерений"><button type="button" class="body-period" data-days="all" aria-pressed="false">Показать все</button><button type="button" class="body-period active" data-days="6" aria-pressed="true">6 мес</button><button type="button" class="body-period" data-days="3" aria-pressed="false">3 мес</button></div><div class="body-vitals" id="bodyCharts"><div class="card body-vitals-card" id="bodyWeightCard"><h3>Вес</h3><div id="bodyWeightPeriod"></div><div id="bodyWeightChart" class="body-vitals-plot"></div></div><div class="card body-vitals-card"><h3>Артериальное давление</h3><div id="bloodPressureChart" class="body-vitals-plot"></div></div><div class="card body-vitals-card"><h3>Пульс</h3><div id="pulseChartNew" class="body-vitals-plot"></div></div></div><div id="bodyOverview" class="reference-panel"><div class="reference-empty">Загружаем измерения…</div></div><p class="overview-footnote">Давление и пульс — из дневника измерений. История инъекций — по подтверждённым записям.</p><p class="overview-footnote" id="diarySyncStatus" role="status" aria-live="polite"></p>
 <div id="bodySectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div><div class="section-title" id="visitsSection">Врачи</div><div class="visits-tools"><label for="visitsSearch">Поиск по консультациям</label><input id="visitsSearch" type="search" placeholder="Специалист, дата, диагноз, процедура" autocomplete="off"><button type="button" id="visitsExpand">Развернуть всё</button><button type="button" id="visitsCollapse">Свернуть всё</button></div><div id="visitsOverview" class="reference-panel"><div class="reference-empty">Загружаем консультации…</div></div><div id="visitsSectionNotes" class="section-explanations" aria-label="Пояснения к разделу"></div>
 <p class="overview-footnote">Все показатели загружаются из Supabase после авторизации. Исторические результаты, перенесённые из старого дашборда, могут не иметь подтверждения оригинальным лабораторным документом. Оценку результатов проводит лечащий врач.</p>
-</div></section><section class="card hidden" id="labsCard"><div class="lab-journal-heading"><h2>Лабораторные анализы</h2><button id="loadLabs" type="button">Обновить</button></div><label class="sr-only" for="labsFilter">Найти показатель, дату или лабораторию</label><input id="labsFilter" type="search" placeholder="Показатель, дата или лаборатория"><div class="lab-journal-tools"><div class="body-toolbar" role="group" aria-label="Организация анализов"><button type="button" class="lab-mode active" data-mode="analyte" aria-pressed="true">По показателю</button><button type="button" class="lab-mode" data-mode="date" aria-pressed="false">По дате</button></div><label class="check"><input type="checkbox" id="onlyAbnormal"><span>Только отклонения</span></label></div><p id="labsStatus" role="status" aria-live="polite">Загружаем результаты…</p><div id="labAnalyteView"></div><div id="labsList" class="hidden"></div><div id="labTrends" class="hidden"></div><details id="sourceArchive"><summary>Архив исходного дашборда</summary><p>Исторические таблицы, назначения и примечания. Доступны владельцу аккаунта.</p><div id="archiveContent"></div></details></section><section class="card" id="importCard"><h2>Импорт лабораторных данных</h2><label>Файл<input id="file" type="file" accept=".json,application/json"></label><p id="fileinfo">Файл не выбран</p><button id="stage" disabled>Подготовить импорт</button></section><section class="card hidden" id="preview"><h2>Проверка перед сохранением</h2><p id="summary"></p><div id="source"></div><h2>Показатели</h2><div id="results"></div><h2>Интерпретации</h2><div id="blocks"></div><label class="check"><input type="checkbox" id="agree"><span>Я сверил значения, единицы, референсы и уровни доступа с исходным документом.</span></label><button id="confirm" disabled>Подтвердить и сохранить</button><button id="close">Закрыть просмотр</button></section><p class="status" id="status">Загрузка конфигурации…</p></main><script src="./config.js?v=20261119-3"></script><script>
+</div></section><section class="card hidden" id="labsCard"><div class="lab-journal-heading"><h2>Лабораторные анализы</h2><button id="loadLabs" type="button">Обновить</button></div><label class="sr-only" for="labsFilter">Найти показатель, дату или лабораторию</label><input id="labsFilter" type="search" placeholder="Показатель, дата или лаборатория"><div class="lab-journal-tools"><div class="body-toolbar" role="group" aria-label="Организация анализов"><button type="button" class="lab-mode active" data-mode="analyte" aria-pressed="true">По показателю</button><button type="button" class="lab-mode" data-mode="date" aria-pressed="false">По дате</button></div><label class="check"><input type="checkbox" id="onlyAbnormal"><span>Только отклонения</span></label></div><p id="labsStatus" role="status" aria-live="polite">Загружаем результаты…</p><div id="labAnalyteView"></div><div id="labsList" class="hidden"></div><div id="labTrends" class="hidden"></div><details id="sourceArchive"><summary>Архив исходного дашборда</summary><p>Исторические таблицы, назначения и примечания. Доступны владельцу аккаунта.</p><div id="archiveContent"></div></details></section><section class="card" id="importCard"><h2>Импорт лабораторных данных</h2><label>Файл<input id="file" type="file" accept=".json,application/json"></label><p id="fileinfo">Файл не выбран</p><button id="stage" disabled>Подготовить импорт</button></section><section class="card hidden" id="preview"><h2>Проверка перед сохранением</h2><p id="summary"></p><div id="source"></div><h2>Показатели</h2><div id="results"></div><h2>Интерпретации</h2><div id="blocks"></div><label class="check"><input type="checkbox" id="agree"><span>Я сверил значения, единицы, референсы и уровни доступа с исходным документом.</span></label><button id="confirm" disabled>Подтвердить и сохранить</button><button id="close">Закрыть просмотр</button></section><p class="status" id="status">Загрузка конфигурации…</p></main><dialog id="pdfDialog" aria-label="Выгрузка PDF"><div class="pdf-tools"><p id="pdfStatus" role="status"></p><button id="printPdf" type="button" disabled>Сохранить PDF</button><button id="closePdf" type="button">Закрыть</button></div><article id="pdfContent"></article></dialog><script src="./config.js?v=20261119-3"></script><script>
 // Standalone Auth API client: no external JavaScript modules.
 function createClient(base,key){
  const endpoint=base+'/auth/v1',listeners=new Set(),store='md_auth_session_v2';
@@ -373,8 +376,8 @@ e('journalSearch').addEventListener('input',()=>{
 });
 
 let client=null,payload=null,importId=null,signed=false,busy=false,recoveryReady=false,PATIENT=null;
-function status(t){e('status').textContent=t}let privateViewEpoch=0;let labsRequestSerial=0;function clearPrivateView(){privateViewEpoch++;PATIENT=null;labChartPeriods.clear();patientSummaryProfile=null;clearJournalProfile();cachedReports=[];cachedResults=[];labJournalMode='analyte';e('labsFilter').value='';e('onlyAbnormal').checked=false;therapyTimeline=[];bodyHistory=[];bodyPeriodCustomized=false;consultationHistory=[];for(const id of ['diarySyncStatus','overviewSectionNotes','hormonesSectionNotes','hematologySectionNotes','chemistrySectionNotes','markersSectionNotes','protocolSectionNotes','bodySectionNotes','visitsSectionNotes','archiveContent','labsList','labAnalyteView','labTrends','overviewMetrics','overviewAttention','overviewNormal','hematologyCharts','hormoneCharts','hormonesOverview','hematologyOverview','chemistryOverview','markersOverview','protocolOverview','protocolNotes','bodyOverview','visitsOverview','bodyWeightChart','bodyWeightPeriod','bodyFatChart','bodyMuscleChart','bodyWaterChart','bodyBpChart','bodyPulseChart','bloodPressureChart','pulseChartNew']){const node=e(id);if(node)node.replaceChildren()}for(const id of ['overviewStatus','labsStatus']){const node=e(id);if(node)node.textContent='Войди, чтобы увидеть защищённые данные.'}const account=e('accountName');if(account)account.textContent='';const file=e('file');if(file)file.value='';const agree=e('agree');if(agree)agree.checked=false;const summary=e('summary');if(summary)summary.textContent='';for(const id of ['source','results','blocks']){const node=e(id);if(node)node.replaceChildren()}const info=e('fileinfo');if(info)info.textContent='';const preview=e('preview');if(preview)preview.classList.add('hidden');const archive=e('sourceArchive');if(archive)archive.open=false;payload=null;importId=null}
-function refresh(){e('overview').classList.toggle('hidden',!signed);e('labsCard').classList.toggle('hidden',!signed);e('loginCard').classList.toggle('hidden',signed);e('recoveryCard').classList.toggle('hidden',signed);e('journalMenuButton').classList.toggle('hidden',!signed);e('journalInitials').classList.toggle('hidden',!signed);if(!signed)closeJournalMenu();e('login').disabled=busy||!client;e('logout').disabled=busy||!signed;e('stage').disabled=busy||!signed||!PATIENT||!payload;e('confirm').disabled=busy||!signed||!importId||!e('agree').checked}function lock(v){busy=v;refresh()}function bounded(p,ms=12000){return Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Supabase не ответил за 12 секунд. Обнови страницу и попробуй снова.')),ms))])}function text(parent,tag,value,cls=''){let n=document.createElement(tag);n.textContent=String(value??'');n.className=cls;parent.append(n);return n}
+function status(t){e('status').textContent=t}let privateViewEpoch=0;let labsRequestSerial=0;function clearPrivateView(){closePdfExport();privateViewEpoch++;PATIENT=null;labChartPeriods.clear();patientSummaryProfile=null;clearJournalProfile();cachedReports=[];cachedResults=[];labJournalMode='analyte';e('labsFilter').value='';e('onlyAbnormal').checked=false;therapyTimeline=[];bodyHistory=[];bodyPeriodCustomized=false;consultationHistory=[];for(const id of ['diarySyncStatus','overviewSectionNotes','hormonesSectionNotes','hematologySectionNotes','chemistrySectionNotes','markersSectionNotes','protocolSectionNotes','bodySectionNotes','visitsSectionNotes','archiveContent','labsList','labAnalyteView','labTrends','overviewMetrics','overviewAttention','overviewNormal','hematologyCharts','hormoneCharts','hormonesOverview','hematologyOverview','chemistryOverview','markersOverview','protocolOverview','protocolNotes','bodyOverview','visitsOverview','bodyWeightChart','bodyWeightPeriod','bodyFatChart','bodyMuscleChart','bodyWaterChart','bodyBpChart','bodyPulseChart','bloodPressureChart','pulseChartNew']){const node=e(id);if(node)node.replaceChildren()}for(const id of ['overviewStatus','labsStatus']){const node=e(id);if(node)node.textContent='Войди, чтобы увидеть защищённые данные.'}const account=e('accountName');if(account)account.textContent='';const file=e('file');if(file)file.value='';const agree=e('agree');if(agree)agree.checked=false;const summary=e('summary');if(summary)summary.textContent='';for(const id of ['source','results','blocks']){const node=e(id);if(node)node.replaceChildren()}const info=e('fileinfo');if(info)info.textContent='';const preview=e('preview');if(preview)preview.classList.add('hidden');const archive=e('sourceArchive');if(archive)archive.open=false;payload=null;importId=null}
+function refresh(){e('exportPdf').disabled=!signed||!PATIENT;e('overview').classList.toggle('hidden',!signed);e('labsCard').classList.toggle('hidden',!signed);e('loginCard').classList.toggle('hidden',signed);e('recoveryCard').classList.toggle('hidden',signed);e('journalMenuButton').classList.toggle('hidden',!signed);e('journalInitials').classList.toggle('hidden',!signed);if(!signed)closeJournalMenu();e('login').disabled=busy||!client;e('logout').disabled=busy||!signed;e('stage').disabled=busy||!signed||!PATIENT||!payload;e('confirm').disabled=busy||!signed||!importId||!e('agree').checked}function lock(v){busy=v;refresh()}function bounded(p,ms=12000){return Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Supabase не ответил за 12 секунд. Обнови страницу и попробуй снова.')),ms))])}function text(parent,tag,value,cls=''){let n=document.createElement(tag);n.textContent=String(value??'');n.className=cls;parent.append(n);return n}
 function validate(x){if(!x||x.schemaVersion!=='1.0'||x.kind!=='laboratory_import'||!Array.isArray(x.results)||!x.results.length||x.results.length>500||!Array.isArray(x.contentBlocks)||x.contentBlocks.length>100||!x.source||typeof x.source!=='object'||!/^[a-f0-9]{64}$/.test(x.source.documentSha256||'')||!/^[a-zA-Z0-9_-]{8,100}$/.test(x.importId||''))throw Error('Неверная структура JSON');let seen=new Set();for(let r of x.results){if(!r.analyte?.code||!r.analyte?.name||!r.unit||!r.sourceLocator||!['all_doctors','owner_and_zelensky','owner_only'].includes(r.visibility)||!['numeric','text'].includes(r.valueType)||r.value===null||r.value===undefined||String(r.value).trim()==='')throw Error('Неполный показатель');if(String(r.analyte.code).length>100||String(r.analyte.name).length>250||String(r.unit).length>60||String(r.sourceLocator).length>500)throw Error('Слишком длинное поле показателя '+r.analyte.code);if(seen.has(r.analyte.code))throw Error('Повтор кода '+r.analyte.code);seen.add(r.analyte.code);if(r.valueType==='numeric'&&!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(String(r.value)))throw Error('Некорректное число '+r.analyte.code)}for(let b of x.contentBlocks)if(!b.title||!b.text||!['all_doctors','owner_and_zelensky','owner_only'].includes(b.visibility))throw Error('Неверный блок интерпретации')}
 async function rpc(name,data){const epoch=privateViewEpoch;let{data:{session}}=await client.auth.getSession();if(epoch!==privateViewEpoch||!signed)throw Error('Операция прервана после выхода');if(!session?.access_token)throw Error('Сессия истекла');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);let r,j;try{r=await fetch(SUPABASE_URL+'/functions/v1/'+name,{method:'POST',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json',apikey:KEY,Authorization:'Bearer '+session.access_token},body:JSON.stringify(data)});j=await r.json().catch(()=>({}))}catch(err){if(err?.name==='AbortError')throw Error('Сервер не ответил за 20 секунд. Результат операции неизвестен; проверь список анализов перед повторной попыткой.');if(err instanceof TypeError)throw Error('Ошибка соединения с сервером. Результат операции неизвестен; проверь подключение и список анализов.');throw err}finally{clearTimeout(timeout)}if(epoch!==privateViewEpoch||!signed)throw Error('Операция прервана после выхода');if(!r.ok)throw Error(j.error||j.message||'Ошибка HTTP '+r.status);return j}
 function show(x){e('preview').classList.remove('hidden');e('summary').textContent='Показателей: '+(x.resultCount??x.results?.length??0)+' · Интерпретаций: '+(x.contentBlockCount??x.contentBlocks?.length??0);for(let id of ['source','results','blocks'])e(id).replaceChildren();let s=x.source||{};text(e('source'),'p',[s.labName,s.sampleDate,s.reportDate].filter(Boolean).join(' · '));for(let r of x.results||[]){let d=text(e('results'),'div','','row');text(d,'strong',r.analyte?.name||r.analyte?.code);text(d,'div',String(r.value??'—')+' '+(r.unit||''),'value');if(r.reference?.low!=null||r.reference?.high!=null)markMildReference(text(d,'span',medicalReferenceLabel(r.value,r.reference?.low,r.reference?.high,false,r.analyte?.name),'tag'),r.value,r.reference?.low,r.reference?.high,r.analyte?.name);text(d,'small','Референс: '+(r.reference?.text||[r.reference?.low,r.reference?.high].filter(v=>v!=null).join('–')||'не указан'));if(r.originalText)text(d,'small','Оригинал: '+r.originalText);text(d,'span',r.visibility,'tag')}for(let b of x.contentBlocks||[]){let d=text(e('blocks'),'div','','row');text(d,'strong',b.title);text(d,'small',b.text);text(d,'span',b.visibility,'tag')}e('agree').checked=false;refresh();e('preview').scrollIntoView({behavior:'smooth'})}
@@ -453,9 +456,9 @@ function interpretationSections(row){
   const date=String(row.title||'').match(/(\d{2})\.(\d{2})\.(\d{4})/);
   return [...groups].map(([section,sentences])=>({section,title:row.title||'Пояснение',tone:'note',as_of:date?date[3]+'-'+date[2]+'-'+date[1]:'',paragraphs:[...sentences,...disclaimer].map(sentence=>[{text:sentence,bold:false}])}));
 }
-function renderSectionExplanations(rows){
+function renderSectionExplanations(rows,resolveHost=e){
   const sections=['overview','hormones','hematology','chemistry','markers','protocol','body','visits'];
-  for(const section of sections)e(section+'SectionNotes').replaceChildren();
+  for(const section of sections)resolveHost(section+'SectionNotes').replaceChildren();
   const blocks=[];
   for(const row of rows){
     if(row.kind==='section_note'){try{const block=JSON.parse(row.body);if(sections.includes(block.section)&&Array.isArray(block.paragraphs))blocks.push(block);}catch{}}
@@ -463,7 +466,7 @@ function renderSectionExplanations(rows){
   }
   blocks.sort((a,b)=>String(b.as_of||'').localeCompare(String(a.as_of||''))||Number(String(a.source_key||'').split('-').pop()||0)-Number(String(b.source_key||'').split('-').pop()||0));
   for(const block of blocks){
-    const host=e(block.section+'SectionNotes');
+    const host=resolveHost(block.section+'SectionNotes');
     const history=block.section==='overview'&&block.source_key;
     const note=text(host,history?'details':'article','','section-explanation '+(block.tone==='warning'?'explanation-warning':'explanation-note'));
     text(note,history?'summary':'h3',block.title||'Пояснение');
@@ -640,8 +643,8 @@ function chartAxisLabel(svg,x,y,value,anchor){
   label.setAttribute('text-anchor',anchor);label.setAttribute('class','chart-axis');
   label.textContent=value;svg.append(label);
 }
-function renderHematologyCharts(reports,results,section='hematology'){
-  const host=e(section==='hormones'?'hormoneCharts':'hematologyCharts');
+function renderHematologyCharts(reports,results,section='hematology',target=null,options={}){
+  const host=target||e(section==='hormones'?'hormoneCharts':'hematologyCharts');
   if(!host)return;
   host.replaceChildren();
   const dates=new Map(reports.map(report=>[report.id,report.sample_date||report.report_date]));
@@ -663,13 +666,13 @@ function renderHematologyCharts(reports,results,section='hematology'){
       .filter(point=>Number.isFinite(point.value)).sort((a,b)=>a.date.localeCompare(b.date));
     const card=text(host,'div','','hematology-chart-card');
     text(card,'h3',def.title);
-    const periodKey=section+':'+def.title;addMedicalPeriodToolbar(card,periodKey,()=>renderHematologyCharts(reports,results,section));
+    const periodKey=section+':'+def.title;if(!options.pdf)addMedicalPeriodToolbar(card,periodKey,()=>renderHematologyCharts(reports,results,section));
     if(!points.length){text(card,'p','Нет доступных лабораторных измерений.','reference-empty');continue}
     const latest=points[points.length-1];
     const figure=text(card,'strong',String(latest.value).replace('.',','));
     text(figure,'span',' '+(latest.unit||def.unit),'result-unit');
     const comparable=points.filter(point=>point.unit===latest.unit);
-    const plotted=filterMedicalPeriod(comparable,labChartPeriods.get(periodKey)||'6');
+    const plotted=filterMedicalPeriod(comparable,options.pdf?'all':labChartPeriods.get(periodKey)||'6');
     if(comparable.length!==points.length)text(card,'small','График строится по результатам в '+(latest.unit||def.unit)+'.');
     if(!plotted.length){text(card,'p','За выбранный период измерений нет.','reference-empty');continue}
     if(def.title==='Гемоглобин'&&points.some(point=>point.converted))text(card,'small','Результаты в г/дл пересчитаны в г/л (×10).');
@@ -691,7 +694,7 @@ function renderHematologyCharts(reports,results,section='hematology'){
     svg.setAttribute('preserveAspectRatio','xMidYMid meet');
     svg.setAttribute('role','img');svg.setAttribute('aria-label','Динамика '+def.title);
     svg.classList.add('hematology-line-chart');
-    const timeline=therapyTimeline.filter(event=>String(event.medication||'').toLowerCase().includes('омнадрен')&&
+    const timeline=(options.therapy||therapyTimeline).filter(event=>String(event.medication||'').toLowerCase().includes('омнадрен')&&
       event.dose!==null&&event.dose!==undefined&&String(event.dose).trim()!==''&&Number.isFinite(Number(event.dose))&&validLabDate(String(event.event_at||'').slice(0,10)))
       .sort((a,b)=>String(a.event_at).localeCompare(String(b.event_at)));
     for(let index=0;index<timeline.length&&last>first;index++){
@@ -1246,6 +1249,102 @@ e('sourceArchive').addEventListener('toggle',()=>{
 async function resolvePatient(){const epoch=privateViewEpoch;if(!signed)throw Error('Требуется авторизация');const rows=await labRead('md_memberships?select=patient_id,role&active=eq.true&order=patient_id.asc&limit=2');if(epoch!==privateViewEpoch||!signed)throw Error('Загрузка отменена');if(rows.length!==1||!/^[0-9a-f-]{36}$/.test(String(rows[0].patient_id||'')))throw Error('Не удалось однозначно определить медицинский профиль для аккаунта');PATIENT=rows[0].patient_id;loadPatientSummary().catch(()=>{if(signed&&epoch===privateViewEpoch)e('patientMetadata').textContent='Не удалось загрузить данные профиля';});return PATIENT}
 async function labReadPages(path,epoch,serial,onProgress){const rows=[];const pageSize=500,maxRows=10000;for(let offset=0;offset<=maxRows;offset+=pageSize){if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)throw Error('Загрузка отменена');const join=path.includes('?')?'&':'?';let page;for(let attempt=0;attempt<2;attempt++){try{page=await labRead(path+join+'limit='+(offset===maxRows?1:pageSize)+'&offset='+offset);break}catch(err){const transient=[408,500,502,503,504,520,522,524].includes(err?.httpStatus)||/Ошибка сети при загрузке|Сервер не ответил за 20 секунд/.test(String(err?.message||err));if(!transient||attempt===1||!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)throw err;await new Promise(resolve=>setTimeout(resolve,500))}}if(!signed||epoch!==privateViewEpoch||serial!==labsRequestSerial)throw Error('Загрузка отменена');if(offset===maxRows){if(page.length)throw Error('История превышает 10 000 записей. Нужна загрузка по диапазонам дат.');return rows}rows.push(...page);if(onProgress)onProgress(rows.length);if(page.length<pageSize)return rows}return rows}
 
+let pdfExportSerial=0;
+function closePdfExport(){
+  pdfExportSerial++;
+  if(e('pdfDialog').open)e('pdfDialog').close();
+  e('pdfContent').replaceChildren();document.body.classList.remove('pdf-export-open');
+  e('printPdf').disabled=true;document.title='Медицинский дашборд';
+}
+async function exportPdf(){
+  if(!signed||!client||!PATIENT)return;
+  const epoch=privateViewEpoch,serial=labsRequestSerial,patient=PATIENT,request=++pdfExportSerial;
+  e('pdfContent').replaceChildren();e('printPdf').disabled=true;
+  e('pdfStatus').textContent='Подготавливаем полную историю…';e('pdfDialog').showModal();
+  const valid=()=>signed&&epoch===privateViewEpoch&&serial===labsRequestSerial&&patient===PATIENT&&request===pdfExportSerial;
+  try{
+    const suffix='&patient_id=eq.'+encodeURIComponent(patient);
+    const [reports,diary,therapy,blocks]=await Promise.all([
+      labReadPages('md_lab_reports?select=id,lab_name,sample_date,report_date'+suffix+'&order=sample_date.desc,id.asc',epoch,serial),
+      labReadPages('md_diary_entries?select=measured_at,metric,value,unit'+suffix+'&order=measured_at.desc,id.asc',epoch,serial),
+      labReadPages('md_therapy_events?select=event_at,medication,dose,dose_unit,note'+suffix+'&order=event_at.desc,id.asc',epoch,serial),
+      labReadPages('md_content_blocks?select=title,body,kind'+suffix+'&kind=in.(patient_profile,section_note,interpretation,consultation_history,protocol_history,medication_inventory)&order=created_at.desc,id.asc',epoch,serial)
+    ]);
+    const ids=reports.map(r=>r.id).filter(id=>/^[0-9a-f-]{36}$/.test(id));
+    const results=[];
+    for(let i=0;i<ids.length;i+=40){
+      if(!valid())throw Error('Подготовка отменена');
+      results.push(...await labReadPages('md_lab_results?select=report_id,analyte_code,analyte_name,numeric_value,text_value,unit,ref_low,ref_high,reference_text,flag&report_id=in.('+ids.slice(i,i+40).join(',')+')&order=report_id.asc,analyte_code.asc,id.asc',epoch,serial));
+    }
+    if(!valid())throw Error('Подготовка отменена');
+    renderPdf({reports,results,diary,therapy,blocks});
+    if(!valid())throw Error('Подготовка отменена');
+    document.body.classList.add('pdf-export-open');
+    e('pdfStatus').textContent='Нажми «Сохранить PDF», затем выбери сохранение в PDF. На iPhone используй меню отправки предпросмотра печати.';
+    e('printPdf').disabled=false;
+  }catch(error){
+    if(request===pdfExportSerial){e('pdfContent').replaceChildren();e('pdfStatus').textContent='Не удалось подготовить PDF: '+error.message;}
+  }
+}
+function renderPdf({reports,results,diary,therapy,blocks}){
+  const root=e('pdfContent');
+  const formatDate=value=>validLabDate(String(value).slice(0,10))?displayMedicalDate(String(value).slice(0,10)):'Без точной даты';
+  const number=value=>value===null||value===undefined?'—':new Intl.NumberFormat('ru-RU',{maximumFractionDigits:5}).format(value);
+  let profile=null;try{profile=JSON.parse(blocks.find(b=>b.kind==='patient_profile')?.body||'null')}catch{}
+  text(root,'h1',profile?.display_name||'Медицинский дашборд');
+  if(profile?.birth_date)text(root,'p','Дата рождения: '+formatDate(profile.birth_date));
+  const now=new Date();document.title='Дашборд-'+new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Saratov'}).format(now);
+  text(root,'p','Сформировано: '+new Intl.DateTimeFormat('ru-RU',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Saratov'}).format(now));
+  text(root,'p','Полная доступная история · '+reports.length+' отчётов · '+results.length+' результатов');
+  const hosts={};
+  function section(key,title){const node=text(root,'section','');text(node,'h2',title);hosts[key]=node;return node;}
+  const overview=section('overview','К обсуждению с врачом');
+  const byReport=new Map(reports.map(r=>[r.id,r]));
+  const dates=new Map(reports.map(r=>[r.id,r.sample_date||r.report_date]));
+  for(const [key,title] of [['hormones','Гормоны'],['hematology','Гематология'],['chemistry','Биохимия и другие исследования'],['markers','Маркеры']]){
+    const node=section(key,title);
+    if(key==='hormones'||key==='hematology')renderHematologyCharts(reports,results,key,text(node,'div',''),{pdf:true,therapy});
+    const rows=results.filter(r=>pdfLabSection(r)===key).sort((a,b)=>String(dates.get(b.report_id)||'').localeCompare(String(dates.get(a.report_id)||'')));
+    const body=pdfTable(node,['Дата','Показатель','Результат','Референс','Лаборатория']);
+    for(const r of rows){const tr=text(body,'tr','');text(tr,'td',formatDate(dates.get(r.report_id)));text(tr,'td',r.analyte_name||r.analyte_code);text(tr,'td',(r.numeric_value!==null&&r.numeric_value!==undefined?number(r.numeric_value):r.text_value||'—')+' '+(r.unit||''));text(tr,'td',medicalReferenceText({low:r.ref_low,high:r.ref_high,text:r.reference_text},r.unit));text(tr,'td',byReport.get(r.report_id)?.lab_name||'—');}
+  }
+  const protocol=section('protocol','Протокол');
+  let inventory=null;try{inventory=blocks.filter(b=>b.kind==='medication_inventory').map(b=>JSON.parse(b.body)).find(b=>b.medication==='Омнадрен')}catch{}
+  renderProtocolTables(protocol,therapy,inventory);
+  for(const b of blocks.filter(b=>b.kind==='protocol_history'&&/расписание добавок/i.test(b.title||''))){text(protocol,'h3',b.title);text(protocol,'p',b.body);}
+  const body=section('body','Состав тела и давление');
+  for(const [metric,label] of [['weight','Вес'],['systolic','Систолическое давление'],['diastolic','Диастолическое давление'],['pulse','Пульс']])pdfDiaryChart(body,diary,metric,label);
+  const all=pdfTable(body,['Дата','Показатель','Значение']);
+  const names={weight:'Вес',body_weight:'Вес',muscle_mass:'Мышечная масса',body_fat:'Доля жира',fat_percent:'Доля жира',systolic:'Систолическое давление',diastolic:'Диастолическое давление',pulse:'Пульс'};
+  for(const r of diary){const tr=text(all,'tr','');text(tr,'td',validLabDate(String(r.measured_at).slice(0,10))?new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Saratov'}).format(new Date(r.measured_at)):formatDate(r.measured_at));text(tr,'td',names[r.metric]||r.metric);text(tr,'td',number(r.value)+' '+(r.unit||''));}
+  const visits=section('visits','Врачи');
+  for(const b of blocks.filter(b=>b.kind==='consultation_history')){text(visits,'h3',b.title);text(visits,'p',b.body);}
+  const noteHosts={};
+  renderSectionExplanations(blocks,key=>{const name=key.replace('SectionNotes','');if(!noteHosts[name])noteHosts[name]=text(hosts[name],'div','');return noteHosts[name]});
+  for(const d of root.querySelectorAll('details'))d.open=true;
+}
+function pdfTable(host,headers){const t=text(host,'table','');const head=text(text(t,'thead',''),'tr','');for(const h of headers)text(head,'th',h);return text(t,'tbody','');}
+function pdfLabSection(r){
+ const n=String(r.analyte_name||'').toLowerCase();
+ if(/пса|онкомаркер|с[- ]реактивн|срб|гомоцистеин|витамин|железо|трансферрин|фолиев|nt-probnp|рэа|цинк|ферритин/.test(n))return 'markers';
+ if(/тестостерон|эстрадиол|пролактин|лютеинизир|лг|фсг|гспг|дгэа|кортизол|прогестерон|инсулин|лептин|андроген|тиреотроп|^т[34]/.test(n))return 'hormones';
+ if(/гематокрит|гемоглобин|эритроцит|тромбоцит|лейкоцит|нейтрофил|эозинофил|базофил|моноцит|лимфоцит|соэ|mcv|mch|rdw|mpv|pdw|pct/.test(n))return 'hematology';
+ return 'chemistry';
+}
+function pdfDiaryChart(host,rows,metric,label){
+ const points=rows.filter(r=>r.metric===metric&&r.value!==null).sort((a,b)=>String(a.measured_at).localeCompare(String(b.measured_at)));
+ if(points.length<2)return;
+ const panel=text(host,'div','','pdf-chart');text(panel,'h3',label);
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 600 160');
+ const values=points.map(p=>Number(p.value)),min=Math.min(...values),max=Math.max(...values),range=max-min||1;
+ const p=points.map((r,i)=>({x:20+i*560/(points.length-1),y:130-(Number(r.value)-min)/range*100}));
+ const path=document.createElementNS(ns,'path');path.setAttribute('d',medicalSmoothPath(p));path.setAttribute('fill','none');path.setAttribute('stroke',metric==='systolic'?'#b96243':'#397b64');path.setAttribute('stroke-width','2');svg.append(path);panel.append(svg);
+ text(panel,'p',displayMedicalDate(points[0].measured_at.slice(0,10))+' — '+displayMedicalDate(points.at(-1).measured_at.slice(0,10))+' · '+points.length+' измерений');
+}
+e('closePdf').onclick=closePdfExport;e('pdfDialog').addEventListener('cancel',closePdfExport);
+e('printPdf').onclick=()=>{if(signed&&e('pdfContent').children.length&&!e('printPdf').disabled)window.print()};
+e('exportPdf').onclick=exportPdf;
+
 let labJournalMode='analyte';
 function labJournalRows(){
   const reports=new Map(cachedReports.map(report=>[report.id,report]));
@@ -1371,5 +1470,6 @@ e('stage').onclick=async()=>{if(busy||!signed||!PATIENT||!payload)return;const e
 e('agree').onchange=refresh;e('close').onclick=()=>{importId=null;e('agree').checked=false;e('preview').classList.add('hidden');status('Просмотр закрыт. Черновик остаётся на сервере.');refresh()};
 e('confirm').onclick=async()=>{if(!importId||!e('agree').checked)return;const epoch=privateViewEpoch;lock(true);try{let x=await rpc('medical-import-confirm',{importId});if(epoch!==privateViewEpoch)return;if(x.status!=='accepted'&&x.status!=='already_accepted')throw Error('Неожиданный статус подтверждения: '+String(x.status));status(x.status==='already_accepted'?'Этот импорт уже был подтверждён ранее. Повторная запись не выполнялась.':'Импорт подтверждён и сохранён.');importId=null;payload=null;e('file').value='';e('fileinfo').textContent='Файл не выбран';e('agree').checked=false;e('preview').classList.add('hidden');refresh();await loadLabs()}catch(x){if(epoch===privateViewEpoch&&signed)status(x.message+' Если подтверждение было отправлено, не загружай документ заново, пока не проверишь его наличие в списке анализов.')}finally{if(epoch===privateViewEpoch)lock(false)}};
 </script></body></html>
+
 
 

@@ -463,3 +463,22 @@ test('Laboratory search opens compact analyte history and dates combine laborato
   await page.locator('#journalMenuButton').click();await page.locator('#accountLogout').click();
   await expect(page.locator('#labAnalyteView')).toBeEmpty();await expect(page.locator('#labsList')).toBeEmpty();
 });
+
+
+test('PDF includes full filtered history, preserves sections and clears on logout', async ({ page }) => {
+  await page.route('https://*.supabase.co/**',async route=>{
+    const url=route.request().url();let body=[];
+    if(url.includes('/auth/v1/token'))body={access_token:'synthetic-pdf',expires_at:Math.floor(Date.now()/1000)+3600};
+    else if(url.includes('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222'}];
+    else if(url.includes('/md_lab_reports'))body=[{id:'11111111-1111-4111-8111-111111111111',sample_date:'2026-01-01',lab_name:'Synthetic'}];
+    else if(url.includes('/md_lab_results'))body=[{report_id:'11111111-1111-4111-8111-111111111111',analyte_name:'Глюкоза',numeric_value:5,unit:'ммоль/л',ref_low:4,ref_high:6}];
+    else if(url.includes('kind=in.'))body=[{kind:'section_note',body:JSON.stringify({section:'chemistry',title:'Synthetic note',paragraphs:[[{text:'Synthetic text'}]]})}];
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('http://127.0.0.1:8765/');await expect(page.locator('#exportPdf')).not.toBeVisible();
+  await page.locator('#email').fill('pdf@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
+  await page.locator('#labsFilter').fill('nothing');await page.locator('#exportPdf').click();
+  await expect(page.locator('#printPdf')).toBeEnabled();await expect(page.locator('#pdfContent')).toContainText('Глюкоза');
+  await expect(page.locator('#pdfContent')).toContainText('Synthetic text');
+  await page.locator('#closePdf').click();await expect(page.locator('#pdfContent')).toBeEmpty();
+});
