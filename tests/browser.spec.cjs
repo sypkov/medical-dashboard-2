@@ -438,6 +438,7 @@ test('Laboratory search opens compact analyte history and dates combine laborato
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto('http://127.0.0.1:8765/');await page.locator('#email').fill('journal@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
+  await expect(page.locator('#labAnalyteView')).toContainText('Гемоглобин');
   await page.locator('#journalSearch').fill('гемог');
   await page.locator('#journalSearchResults').getByRole('button',{name:'Гемоглобин',exact:true}).click();
   const history=page.getByRole('table',{name:'Гемоглобин — история результатов',exact:true});
