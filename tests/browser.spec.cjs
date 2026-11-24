@@ -471,7 +471,7 @@ test('PDF includes full filtered history, preserves sections and clears on logou
     const url=route.request().url();let body=[];
     if(url.includes('/auth/v1/token'))body={access_token:'synthetic-pdf',expires_at:Math.floor(Date.now()/1000)+3600};
     else if(url.includes('/md_memberships'))body=[{patient_id:'22222222-2222-4222-8222-222222222222'}];
-    else if(url.includes('/md_lab_reports'))body=[{id:'11111111-1111-4111-8111-111111111111',sample_date:'2026-01-01',lab_name:'Synthetic'}];
+    else if(url.includes('/md_lab_reports'))body=[{id:'11111111-1111-4111-8111-111111111111',sample_date:'2026-11-19',lab_name:'Synthetic'}];
     else if(url.includes('/md_lab_results'))body=[{report_id:'11111111-1111-4111-8111-111111111111',analyte_name:'Глюкоза',numeric_value:5,unit:'ммоль/л',ref_low:4,ref_high:6}];
     else if(url.includes('kind=in.'))body=[{kind:'section_note',body:JSON.stringify({section:'chemistry',title:'Synthetic note',paragraphs:[[{text:'Synthetic text'}]]})}];
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
@@ -481,5 +481,14 @@ test('PDF includes full filtered history, preserves sections and clears on logou
   await page.locator('#labsFilter').fill('nothing');await page.locator('#exportPdf').click();
   await expect(page.locator('#printPdf')).toBeEnabled();await expect(page.locator('#pdfContent')).toContainText('Глюкоза');
   await expect(page.locator('#pdfContent')).toContainText('Synthetic text');
+  const extracted=require('node:child_process');
+  await page.locator('#pdfDialog').evaluate(node=>{node.scrollTop=node.scrollHeight});
+  await page.emulateMedia({media:'print'});
+  await expect(page.locator('#pdfDialog')).toHaveCSS('overflow','visible');
+  const pdf=await page.pdf({format:'A4',printBackground:true});
+  const text=extracted.execFileSync('pdftotext',['-','-'],{input:pdf}).toString();
+  expect(text).toContain('19.11.2026');expect(text).toContain('5');expect(text).toContain('Synthetic');
+  expect(text.slice(0,150)).toContain('Медицинский');
+  await page.emulateMedia({media:'screen'});
   await page.locator('#closePdf').click();await expect(page.locator('#pdfContent')).toBeEmpty();
 });
