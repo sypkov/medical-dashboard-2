@@ -478,7 +478,6 @@ test('PDF includes full filtered history, preserves sections and clears on logou
   await page.goto('http://127.0.0.1:8765/');await expect(page.locator('#exportPdf')).not.toBeVisible();
   await page.locator('#email').fill('pdf@example.invalid');await page.locator('#password').fill('synthetic-password');await page.locator('#login').click();
   await page.locator('#labsFilter').fill('nothing');await page.locator('#exportPdf').click();
-  await page.locator('#exportPdf').click();
   await expect(page.locator('#printPdf')).toBeEnabled();await expect(page.locator('#pdfContent')).toContainText('Глюкоза');
   await expect(page.locator('#pdfContent')).toContainText('Synthetic text');
   await page.locator('#closePdf').click();await expect(page.locator('#pdfContent')).toBeEmpty();
