@@ -1,0 +1,30 @@
+name: Generate square app icon
+on:
+  push:
+    paths:
+      - '.github/workflows/app-icon.yml'
+      - '427446864_1795768598565139.jpeg'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  icon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install Pillow
+      - run: |
+          python - <<'PY'
+          from PIL import Image
+          im=Image.open('427446864_1795768598565139.jpeg').convert('RGB')
+          w,h=im.size
+          side=round(h*600/768)
+          im=im.crop(((w-side)//2,(h-side)//2,(w-side)//2+side,(h-side)//2+side))
+          for n in (180,192,512):
+              im.resize((n,n),Image.Resampling.LANCZOS).save(f'app-icon-{n}.png')
+          PY
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-icon-*.png
+          git diff --cached --quiet || (git commit -m "Generate square app icons" && git push)
